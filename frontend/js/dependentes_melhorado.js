@@ -357,9 +357,26 @@ function salvarDependente(event) {
             
             if (data.sucesso) {
                 console.log('[DEPENDENTES] Dependente salvo com sucesso');
-                mostrarPopupSucesso('Sucesso!', data.mensagem || 'Dependente salvo com sucesso!');
-                limparFormularioDependente();
-                carregarDependentes();
+                console.log('[DEPENDENTES] Dados retornados:', data.dados);
+                
+                // Verificar se foi confirmado no banco
+                const confirmado = data.dados && data.dados.confirmado === true;
+                const dependenteId = data.dados && data.dados.id;
+                
+                if (confirmado && dependenteId) {
+                    console.log('[DEPENDENTES] Dependente confirmado no banco - ID:', dependenteId);
+                    mostrarPopupSucesso('✅ Sucesso!', data.mensagem || 'Dependente salvo com sucesso!');
+                    
+                    // Limpar formulário
+                    limparFormularioDependente();
+                    
+                    // Recarregar lista
+                    carregarDependentes();
+                } else {
+                    console.warn('[DEPENDENTES] Dependente salvo mas não confirmado no banco');
+                    mostrarPopupAviso('Atenção', 'Dependente pode não ter sido salvo corretamente. Verifique a lista.');
+                    carregarDependentes();
+                }
             } else {
                 const mensagem = data.mensagem || 'Erro desconhecido ao salvar dependente';
                 console.error('[DEPENDENTES] Erro na resposta:', mensagem);

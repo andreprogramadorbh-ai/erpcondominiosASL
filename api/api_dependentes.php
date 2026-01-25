@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once 'config.php';
 require_once 'auth_helper.php';
 require_once 'controllers/DependenteController.php';
+require_once 'log_erro_dependentes.php';
 
 // VERIFICAÇÃO CRÍTICA DE AUTENTICAÇÃO
 verificarAutenticacao(true, 'operador');
@@ -118,7 +119,37 @@ try {
             }
             
             $resultado = $controller->criar($dados);
-            resposta($resultado['sucesso'], $resultado['mensagem'], isset($resultado['id']) ? ['id' => $resultado['id']] : null);
+            
+            // Retornar dados completos incluindo informações de debug
+            $response_dados = null;
+            if ($resultado['sucesso']) {
+                // Registrar sucesso no log
+                registrarSucessoDependente('criar', 'Dependente cadastrado com sucesso', [
+                    'dependente_id' => $resultado['id'] ?? null,
+                    'morador_id' => $dados['morador_id'] ?? null,
+                    'nome' => $dados['nome_completo'] ?? null
+                ]);
+                
+                $response_dados = [
+                    'id' => $resultado['id'] ?? null,
+                    'dependente' => $resultado['dados'] ?? null,
+                    'confirmado' => true
+                ];
+            } else {
+                // Registrar erro no log
+                registrarErroDependente('criar', $resultado['mensagem'], [
+                    'dados_enviados' => $dados,
+                    'debug' => $resultado['debug'] ?? null,
+                    'erro_detalhado' => $resultado['erro_detalhado'] ?? null
+                ]);
+                
+                $response_dados = [
+                    'debug' => $resultado['debug'] ?? null,
+                    'erro_detalhado' => $resultado['erro_detalhado'] ?? null
+                ];
+            }
+            
+            resposta($resultado['sucesso'], $resultado['mensagem'], $response_dados);
             break;
         
         case 'atualizar':
