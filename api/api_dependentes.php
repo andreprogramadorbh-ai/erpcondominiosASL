@@ -38,10 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once 'config.php';
-require_once 'auth_helper.php';
-require_once 'controllers/DependenteController.php';
-require_once 'log_erro_dependentes.php';
+// ====================================================
+// CAMINHOS ABSOLUTOS: Garantir localização correta dos arquivos
+// ====================================================
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth_helper.php';
+require_once __DIR__ . '/controllers/DependenteController.php';
+require_once __DIR__ . '/log_erro_dependentes.php';
+require_once __DIR__ . '/models/DependenteModel.php';
 
 // VERIFICAÇÃO CRÍTICA DE AUTENTICAÇÃO
 verificarAutenticacao(true, 'operador');

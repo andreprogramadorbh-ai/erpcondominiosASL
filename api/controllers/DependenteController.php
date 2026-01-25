@@ -129,10 +129,21 @@ class DependenteController {
             }
             
             // ====================================================
-            // LIMPEZA DE CPF: Remover máscara (pontos e traços)
+            // LIMPEZA DE DOCUMENTOS: Remover máscaras
             // ====================================================
+            // CPF: 123.456.789-10 → 12345678910
             if (isset($dados['cpf'])) {
                 $dados['cpf'] = preg_replace('/[^0-9]/', '', $dados['cpf']);
+            }
+            
+            // Telefone: (31) 3333-4444 → 3133334444
+            if (isset($dados['telefone'])) {
+                $dados['telefone'] = preg_replace('/[^0-9]/', '', $dados['telefone']);
+            }
+            
+            // Celular: (31) 99999-8888 → 31999998888
+            if (isset($dados['celular'])) {
+                $dados['celular'] = preg_replace('/[^0-9]/', '', $dados['celular']);
             }
             
             // Validações
@@ -217,10 +228,18 @@ class DependenteController {
             }
             
             // ====================================================
-            // LIMPEZA DE CPF: Remover máscara
+            // LIMPEZA DE DOCUMENTOS: Remover máscaras
             // ====================================================
             if (isset($dados['cpf'])) {
                 $dados['cpf'] = preg_replace('/[^0-9]/', '', $dados['cpf']);
+            }
+            
+            if (isset($dados['telefone'])) {
+                $dados['telefone'] = preg_replace('/[^0-9]/', '', $dados['telefone']);
+            }
+            
+            if (isset($dados['celular'])) {
+                $dados['celular'] = preg_replace('/[^0-9]/', '', $dados['celular']);
             }
             
             // Validar CPF se foi alterado
