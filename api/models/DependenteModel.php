@@ -192,20 +192,55 @@ class DependenteModel {
         
         if ($stmt->execute()) {
             $id = $this->conexao->insert_id;
+            $affected_rows = $stmt->affected_rows;
             $stmt->close();
             
-            return [
-                'sucesso' => true,
-                'id' => $id,
-                'mensagem' => 'Dependente cadastrado com sucesso'
-            ];
+            // Verificar se realmente foi inserido
+            if ($id > 0 && $affected_rows > 0) {
+                // Verificar se o registro existe no banco
+                $verificacao = $this->obterPorId($id);
+                
+                if ($verificacao) {
+                    return [
+                        'sucesso' => true,
+                        'id' => $id,
+                        'mensagem' => 'Dependente cadastrado com sucesso',
+                        'dados' => $verificacao
+                    ];
+                } else {
+                    return [
+                        'sucesso' => false,
+                        'mensagem' => 'Erro: Dependente não foi salvo no banco de dados. Verifique os logs do sistema.',
+                        'debug' => [
+                            'insert_id' => $id,
+                            'affected_rows' => $affected_rows,
+                            'verificacao' => 'falhou'
+                        ]
+                    ];
+                }
+            } else {
+                return [
+                    'sucesso' => false,
+                    'mensagem' => 'Erro: Dependente não foi cadastrado. Nenhuma linha foi afetada no banco de dados.',
+                    'debug' => [
+                        'insert_id' => $id,
+                        'affected_rows' => $affected_rows
+                    ]
+                ];
+            }
         } else {
             $erro = $stmt->error;
+            $errno = $stmt->errno;
             $stmt->close();
             
             return [
                 'sucesso' => false,
-                'mensagem' => 'Erro ao cadastrar dependente: ' . $erro
+                'mensagem' => 'Erro ao cadastrar dependente no banco de dados',
+                'erro_detalhado' => $erro,
+                'debug' => [
+                    'errno' => $errno,
+                    'error' => $erro
+                ]
             ];
         }
     }
