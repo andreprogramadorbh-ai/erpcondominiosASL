@@ -178,7 +178,7 @@ class DependenteModel {
         }
         
         $stmt->bind_param(
-            "isssssss",
+            "issssssss",  // 9 parâmetros: i + 8 strings
             $morador_id,
             $nome_completo,
             $cpf,
