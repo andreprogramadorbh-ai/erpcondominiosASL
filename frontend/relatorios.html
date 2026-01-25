@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - Sistema de Controle de Acesso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 2rem 0; overflow-y: auto; }
+        .sidebar h1 { color: #fff; font-size: 1.3rem; text-align: center; margin-bottom: 2rem; }
+        .nav-menu { list-style: none; padding: 1rem; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-link i { margin-right: 0.75rem; width: 20px; }
+        .main-content { margin-left: 260px; padding: 2rem; width: 100%; }
+        .header { background: #fff; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .filter-section, .table-section { background: #fff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 0.6rem; margin-bottom: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+        .checkbox-group input[type="checkbox"] { width: auto; margin: 0; }
+        .checkbox-group label { margin: 0; font-weight: normal; }
+        button { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; padding: 0.6rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-right: 0.5rem; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-export { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .btn-print { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-clear { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: left; font-size: 0.9rem; }
+        th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading.active { display: block; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
+        .alert-info { background: #eff6ff; color: #1d4ed8; border: 1px solid #3b82f6; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background: #f8fafc; padding: 1rem; border-radius: 8px; text-align: center; }
+        .stat-card .value { font-size: 1.5rem; font-weight: bold; color: #1e293b; }
+        .stat-card .label { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+        .table-wrapper { max-height: 600px; overflow-y: auto; }
+        @media print {
+            .sidebar, .filter-section, button { display: none; }
+            .main-content { margin-left: 0; }
+            .table-wrapper { max-height: none; overflow: visible; }
+        }
+        /* Menu Toggle Mobile */
+        .menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: #1e293b; color: #fff; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .header { padding: 1rem; }
+            .form-section, .table-section { padding: 1rem; }
+            th, td { padding: 0.5rem; font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+            button { width: 100%; margin-bottom: 0.5rem; margin-right: 0; }
+        }
+    </style>
+    <script src="js/sessao_manager.js"></script>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <nav class="sidebar" id="sidebar">
+        <h1>Serra da Liberdade</h1>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="moradores.html" class="nav-link"><i class="fas fa-users"></i> Moradores</a></li>
+            <li class="nav-item"><a href="veiculos.html" class="nav-link"><i class="fas fa-car"></i> Veículos</a></li>
+            <li class="nav-item"><a href="visitantes.html" class="nav-link"><i class="fas fa-user-friends"></i> Visitantes</a></li>
+            <li class="nav-item"><a href="registro.html" class="nav-link"><i class="fas fa-clipboard-list"></i> Registro Manual</a></li>
+            <li class="nav-item"><a href="acesso.html" class="nav-link"><i class="fas fa-door-open"></i> Controle de Acesso</a></li>
+            <li class="nav-item"><a href="relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li class="nav-item"><a href="financeiro.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Financeiro</a></li>
+            <li class="nav-item"><a href="configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+            <li class="nav-item"><a href="manutencao.html" class="nav-link"><i class="fas fa-tools"></i> Manutenção</a></li>
+            <li class="nav-item"><a href="administrativa.html" class="nav-link"><i class="fas fa-briefcase"></i> Administrativo</a></li>
+
+<li class="nav-item" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <a href="#" class="nav-link" id="btn-logout" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5;" onclick="fazerLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-file-alt"></i> Relatórios de Acesso</h1>
+        </header>
+
+        <section class="filter-section">
+            <h2>Filtros de Pesquisa</h2>
+            
+            <div class="form-grid">
+                <div>
+                    <label>Data Inicial</label>
+                    <input type="date" id="dataInicial">
+                </div>
+                <div>
+                    <label>Data Final</label>
+                    <input type="date" id="dataFinal">
+                </div>
+                <div>
+                    <label>Hora Inicial</label>
+                    <input type="time" id="horaInicial">
+                </div>
+                <div>
+                    <label>Hora Final</label>
+                    <input type="time" id="horaFinal">
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div>
+                    <label>Placa</label>
+                    <input type="text" id="filtroPlaca" placeholder="ABC1D23">
+                </div>
+                <div>
+                    <label>Modelo</label>
+                    <input type="text" id="filtroModelo" placeholder="Ex: Honda Civic">
+                </div>
+                <div>
+                    <label>Unidade</label>
+                    <input type="text" id="filtroUnidade" placeholder="Ex: 101">
+                </div>
+                <div>
+                    <label>Nome/Morador</label>
+                    <input type="text" id="filtroNome" placeholder="Nome do morador">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Tipo de Acesso:</label>
+                <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="tipoMorador" value="Morador" checked>
+                        <label for="tipoMorador">Morador</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="tipoVisitante" value="Visitante" checked>
+                        <label for="tipoVisitante">Visitante</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="tipoPrestador" value="Prestador" checked>
+                        <label for="tipoPrestador">Prestador</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="apenasLiberados">
+                        <label for="apenasLiberados">Apenas Liberados</label>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <button onclick="aplicarFiltros()"><i class="fas fa-search"></i> Pesquisar</button>
+                <button class="btn-export" onclick="exportarCSV()"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                <button class="btn-print" onclick="imprimir()"><i class="fas fa-print"></i> Imprimir</button>
+                <button class="btn-clear" onclick="limparFiltros()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="value" id="totalRegistros">0</div>
+                    <div class="label">Total de Registros</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="totalMoradores">0</div>
+                    <div class="label">Moradores</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="totalVisitantes">0</div>
+                    <div class="label">Visitantes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="totalPrestadores">0</div>
+                    <div class="label">Prestadores</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="totalLiberados">0</div>
+                    <div class="label">Acessos Liberados</div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Carregando...</p>
+            </div>
+
+            <div class="table-wrapper">
+                <table id="relatorioTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>Placa</th>
+                            <th>Modelo</th>
+                            <th>Cor</th>
+                            <th>TAG</th>
+                            <th>Tipo</th>
+                            <th>Nome</th>
+                            <th>Unidade</th>
+                            <th>Dias Perm.</th>
+                            <th>Status</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let todosRegistros = [];
+        let registrosFiltrados = [];
+
+        // Carregar ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Definir data padrão (últimos 30 dias)
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+            
+            document.getElementById('dataInicial').value = trintaDiasAtras.toISOString().split('T')[0];
+            document.getElementById('dataFinal').value = hoje.toISOString().split('T')[0];
+            
+            carregarTodosRegistros();
+        });
+
+        // Carregar todos os registros
+        function carregarTodosRegistros() {
+            document.getElementById('loading').classList.add('active');
+            
+            fetch('../api/api_registros.php?limite=10000')
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('loading').classList.remove('active');
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            todosRegistros = data.dados;
+                            aplicarFiltros();
+                        } else {
+                            alert('Erro ao carregar registros: ' + data.mensagem);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao processar registros:', text);
+                        alert('Erro ao carregar registros');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.remove('active');
+                    alert('Erro ao carregar registros: ' + error.message);
+                });
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            const dataInicial = document.getElementById('dataInicial').value;
+            const dataFinal = document.getElementById('dataFinal').value;
+            const horaInicial = document.getElementById('horaInicial').value;
+            const horaFinal = document.getElementById('horaFinal').value;
+            const filtroPlaca = document.getElementById('filtroPlaca').value.toUpperCase();
+            const filtroModelo = document.getElementById('filtroModelo').value.toLowerCase();
+            const filtroUnidade = document.getElementById('filtroUnidade').value;
+            const filtroNome = document.getElementById('filtroNome').value.toLowerCase();
+            
+            const tipoMorador = document.getElementById('tipoMorador').checked;
+            const tipoVisitante = document.getElementById('tipoVisitante').checked;
+            const tipoPrestador = document.getElementById('tipoPrestador').checked;
+            const apenasLiberados = document.getElementById('apenasLiberados').checked;
+
+            registrosFiltrados = todosRegistros.filter(r => {
+                // Filtro de data
+                if (dataInicial && r.data_hora < dataInicial) return false;
+                if (dataFinal) {
+                    const dataFinalMais1 = new Date(dataFinal);
+                    dataFinalMais1.setDate(dataFinalMais1.getDate() + 1);
+                    if (r.data_hora >= dataFinalMais1.toISOString().split('T')[0]) return false;
+                }
+
+                // Filtro de hora
+                const horaRegistro = r.data_hora.split(' ')[1] || '00:00:00';
+                if (horaInicial && horaRegistro < horaInicial) return false;
+                if (horaFinal && horaRegistro > horaFinal) return false;
+
+                // Filtro de placa
+                if (filtroPlaca && !r.placa.includes(filtroPlaca)) return false;
+
+                // Filtro de modelo
+                if (filtroModelo && (!r.modelo || !r.modelo.toLowerCase().includes(filtroModelo))) return false;
+
+                // Filtro de unidade
+                const unidade = r.morador_unidade || r.unidade_destino || '';
+                if (filtroUnidade && !unidade.includes(filtroUnidade)) return false;
+
+                // Filtro de nome
+                const nome = (r.morador_nome || r.nome_visitante || '').toLowerCase();
+                if (filtroNome && !nome.includes(filtroNome)) return false;
+
+                // Filtro de tipo
+                if (!tipoMorador && r.tipo === 'Morador') return false;
+                if (!tipoVisitante && r.tipo === 'Visitante') return false;
+                if (!tipoPrestador && r.tipo === 'Prestador') return false;
+
+                // Filtro de liberados
+                if (apenasLiberados && r.liberado != 1) return false;
+
+                return true;
+            });
+
+            renderizarTabela();
+            atualizarEstatisticas();
+        }
+
+        // Renderizar tabela
+        function renderizarTabela() {
+            const tbody = document.querySelector('#relatorioTable tbody');
+            tbody.innerHTML = '';
+
+            if (registrosFiltrados.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;">Nenhum registro encontrado com os filtros aplicados</td></tr>';
+                return;
+            }
+
+            registrosFiltrados.forEach(r => {
+                const tr = document.createElement('tr');
+                const nome = r.morador_nome || r.nome_visitante || r.tipo;
+                const unidade = r.morador_unidade || r.unidade_destino || '-';
+                const dataHora = r.data_hora_formatada || r.data_hora;
+                const [data, hora] = dataHora.split(' ');
+                
+                tr.innerHTML = `
+                    <td>${data}</td>
+                    <td>${hora || '-'}</td>
+                    <td><strong>${r.placa}</strong></td>
+                    <td>${r.modelo || '-'}</td>
+                    <td>${r.cor || '-'}</td>
+                    <td>${r.tag || '-'}</td>
+                    <td>${r.tipo}</td>
+                    <td>${nome}</td>
+                    <td>${unidade}</td>
+                    <td>${r.dias_permanencia || '-'}</td>
+                    <td>${r.status || '-'}</td>
+                    <td>${r.observacao || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Atualizar estatísticas
+        function atualizarEstatisticas() {
+            document.getElementById('totalRegistros').textContent = registrosFiltrados.length;
+            
+            const moradores = registrosFiltrados.filter(r => r.tipo === 'Morador').length;
+            const visitantes = registrosFiltrados.filter(r => r.tipo === 'Visitante').length;
+            const prestadores = registrosFiltrados.filter(r => r.tipo === 'Prestador').length;
+            const liberados = registrosFiltrados.filter(r => r.liberado == 1).length;
+            
+            document.getElementById('totalMoradores').textContent = moradores;
+            document.getElementById('totalVisitantes').textContent = visitantes;
+            document.getElementById('totalPrestadores').textContent = prestadores;
+            document.getElementById('totalLiberados').textContent = liberados;
+        }
+
+        // Limpar filtros
+        function limparFiltros() {
+            const hoje = new Date();
+            const trintaDiasAtras = new Date();
+            trintaDiasAtras.setDate(hoje.getDate() - 30);
+            
+            document.getElementById('dataInicial').value = trintaDiasAtras.toISOString().split('T')[0];
+            document.getElementById('dataFinal').value = hoje.toISOString().split('T')[0];
+            document.getElementById('horaInicial').value = '';
+            document.getElementById('horaFinal').value = '';
+            document.getElementById('filtroPlaca').value = '';
+            document.getElementById('filtroModelo').value = '';
+            document.getElementById('filtroUnidade').value = '';
+            document.getElementById('filtroNome').value = '';
+            document.getElementById('tipoMorador').checked = true;
+            document.getElementById('tipoVisitante').checked = true;
+            document.getElementById('tipoPrestador').checked = true;
+            document.getElementById('apenasLiberados').checked = false;
+            
+            aplicarFiltros();
+        }
+
+        // Exportar CSV
+        function exportarCSV() {
+            if (registrosFiltrados.length === 0) {
+                alert('Nenhum registro para exportar');
+                return;
+            }
+
+            let csv = 'Data;Hora;Placa;Modelo;Cor;TAG;Tipo;Nome;Unidade;Dias Permanência;Status;Observação\n';
+            
+            registrosFiltrados.forEach(r => {
+                const nome = r.morador_nome || r.nome_visitante || r.tipo;
+                const unidade = r.morador_unidade || r.unidade_destino || '';
+                const dataHora = r.data_hora_formatada || r.data_hora;
+                const [data, hora] = dataHora.split(' ');
+                
+                csv += `${data};${hora || ''};${r.placa};${r.modelo || ''};${r.cor || ''};${r.tag || ''};${r.tipo};${nome};${unidade};${r.dias_permanencia || ''};${r.status || ''};${r.observacao || ''}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'relatorio_acessos_' + new Date().toISOString().split('T')[0] + '.csv');
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Imprimir
+        function imprimir() {
+            window.print();
+        }
+        // Toggle menu mobile
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // Fechar menu ao clicar fora (mobile)
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+   
+   // ========== FUNÇÃO DE LOGOUT ==========
+        function fazerLogout(event) {
+            event.preventDefault();
+            
+            if (confirm('Deseja realmente sair do sistema?')) {
+                fetch('../api/logout.php', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        // Limpar sessionStorage
+                        sessionStorage.clear();
+                        
+                        // Redirecionar para login
+                        window.location.href = 'login.html';
+                    } else {
+                        alert('Erro ao fazer logout: ' + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                    // Mesmo com erro, limpar e redirecionar
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+    </script>
+    
+    <!-- Proteção de Login -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/user-display.js"></script>
+    <script src="js/user-profile-sidebar.js"></script>
+</body>
+</html>

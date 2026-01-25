@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Visitantes - Sistema de Controle de Acesso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 2rem 0; overflow-y: auto; }
+        .sidebar h1 { color: #fff; font-size: 1.3rem; text-align: center; margin-bottom: 2rem; }
+        .nav-menu { list-style: none; padding: 1rem; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-link i { margin-right: 0.75rem; width: 20px; }
+        .main-content { margin-left: 260px; padding: 2rem; width: 100%; }
+        .header { background: #fff; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-section, .table-section { background: #fff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        .form-grid-2 { grid-template-columns: 2fr 1fr; }
+        .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; }
+        input, select, textarea { width: 100%; padding: 0.6rem; margin-bottom: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        button { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; padding: 0.6rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-right: 0.5rem; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-cancel { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        .btn-edit { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+        .btn-delete { background: linear-gradient(135deg, #ef4444, #dc2626); padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+        .btn-buscar-cep { background: linear-gradient(135deg, #22c55e, #16a34a); padding: 0.5rem 1rem; margin-top: 1.7rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: left; font-size: 0.9rem; }
+        th { background: #f8fafc; font-weight: 600; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+        .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading.active { display: block; }
+        .search-box { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .search-box input { flex: 1; }
+        .info-box { background: #eff6ff; border: 1px solid #3b82f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+        .info-box strong { color: #1d4ed8; }
+        .cep-loading { display: none; color: #3b82f6; font-size: 0.85rem; margin-top: 0.25rem; }
+        .cep-loading.active { display: block; }
+        /* Menu Toggle Mobile */
+        .menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: #1e293b; color: #fff; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .header { padding: 1rem; }
+            .form-section, .table-section { padding: 1rem; }
+            th, td { padding: 0.5rem; font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+            button { width: 100%; margin-bottom: 0.5rem; margin-right: 0; }
+        }
+        
+        /* Sistema de Abas */
+        .tabs-container { background: #fff; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .tabs { display: flex; border-bottom: 2px solid #f1f5f9; padding: 0 1.5rem; }
+        .tab { padding: 1rem 1.5rem; cursor: pointer; border: none; background: transparent; color: #64748b; font-weight: 600; font-size: 0.95rem; transition: all 0.3s; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+        .tab:hover { color: #3b82f6; }
+        .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .tab-content { display: none; padding: 1.5rem; }
+        .tab-content.active { display: block; }
+        
+        /* QR Code */
+        .qr-container { text-align: center; padding: 2rem; background: #f8fafc; border-radius: 12px; margin: 1rem 0; }
+        .qr-image { max-width: 300px; border: 4px solid #3b82f6; border-radius: 12px; padding: 1rem; background: #fff; }
+        .qr-info { margin-top: 1rem; color: #64748b; font-size: 0.9rem; }
+        .btn-qrcode { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .btn-download { background: linear-gradient(135deg, #10b981, #059669); }
+        
+        /* Badge de Tipo de Acesso */
+        .badge { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; display: inline-block; }
+        .badge-portaria { background: #dbeafe; color: #1e40af; }
+        .badge-externo { background: #fef3c7; color: #92400e; }
+        .badge-lagoa { background: #d1fae5; color: #065f46; }
+        .badge-ativo { background: #dcfce7; color: #166534; }
+        .badge-inativo { background: #fee2e2; color: #991b1b; }
+        
+        /* Cálculo de Dias */
+        .dias-permanencia { background: #eff6ff; border: 2px solid #3b82f6; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0; }
+        .dias-permanencia .numero { font-size: 2rem; font-weight: 700; color: #1d4ed8; }
+        .dias-permanencia .texto { color: #64748b; font-size: 0.9rem; margin-top: 0.5rem; }
+        
+        /* Tipo de Acesso Seletor */
+        .tipo-acesso-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+        .tipo-acesso-option { border: 2px solid #e2e8f0; border-radius: 12px; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+        .tipo-acesso-option:hover { border-color: #3b82f6; background: #eff6ff; }
+        .tipo-acesso-option.selected { border-color: #3b82f6; background: #eff6ff; }
+        .tipo-acesso-option input[type="radio"] { display: none; }
+        .tipo-acesso-option i { font-size: 2rem; margin-bottom: 0.5rem; }
+        .tipo-acesso-option .label { font-weight: 600; color: #1e293b; }
+        
+        @media (max-width: 768px) {
+            .tabs { padding: 0 0.5rem; }
+            .tab { padding: 0.75rem 1rem; font-size: 0.85rem; }
+            .tipo-acesso-selector { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script src="js/sessao_manager.js"></script>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <nav class="sidebar" id="sidebar">
+        <h1>Serra da Liberdade</h1>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="moradores.html" class="nav-link"><i class="fas fa-users"></i> Moradores</a></li>
+            <li class="nav-item"><a href="veiculos.html" class="nav-link"><i class="fas fa-car"></i> Veículos</a></li>
+            <li class="nav-item"><a href="visitantes.html" class="nav-link"><i class="fas fa-user-friends"></i> Visitantes</a></li>
+            <li class="nav-item"><a href="registro.html" class="nav-link"><i class="fas fa-clipboard-list"></i> Registro Manual</a></li>
+            <li class="nav-item"><a href="acesso.html" class="nav-link"><i class="fas fa-door-open"></i> Controle de Acesso</a></li>
+            <li class="nav-item"><a href="relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li class="nav-item"><a href="financeiro.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Financeiro</a></li>
+            <li class="nav-item"><a href="configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+            <li class="nav-item"><a href="manutencao.html" class="nav-link"><i class="fas fa-tools"></i> Manutenção</a></li>
+            <li class="nav-item"><a href="administrativa.html" class="nav-link"><i class="fas fa-briefcase"></i> Administrativo</a></li>
+
+            <li class="nav-item" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <a href="#" class="nav-link" id="btn-logout" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5;" onclick="fazerLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-user-friends"></i> Cadastro de Visitantes</h1>
+        </header>
+
+        <div id="alertBox"></div>
+
+        <!-- Sistema de Abas -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" onclick="abrirAba('visitantes')">
+                    <i class="fas fa-user-friends"></i> Visitantes
+                </button>
+                <button class="tab" onclick="abrirAba('acessos')">
+                    <i class="fas fa-qrcode"></i> Acessos
+                </button>
+            </div>
+            
+            <!-- ABA: VISITANTES -->
+            <div id="tab-visitantes" class="tab-content active">
+                <section class="form-section" style="box-shadow: none; padding: 0; margin-bottom: 1.5rem;">
+            <h2 id="formTitle">Novo Visitante</h2>
+            
+            <form id="visitanteForm">
+                <input type="hidden" id="visitanteId">
+                
+                <div class="form-grid">
+                    <div style="grid-column: 1 / -1;">
+                        <label>Nome Completo *</label>
+                        <input type="text" id="nomeCompleto" required placeholder="Nome completo do visitante">
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-3">
+                    <div>
+                        <label>Tipo de Documento *</label>
+                        <select id="tipoDocumento" required>
+                            <option value="CPF">CPF</option>
+                            <option value="RG">RG</option>
+                        </select>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label>Número do Documento *</label>
+                        <input type="text" id="documento" required placeholder="000.000.000-00">
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-3">
+                    <div>
+                        <label>CEP</label>
+                        <input type="text" id="cep" maxlength="10" placeholder="00000-000">
+                        <div class="cep-loading" id="cepLoading">
+                            <i class="fas fa-spinner fa-spin"></i> Buscando CEP...
+                        </div>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label>Endereço</label>
+                        <input type="text" id="endereco" placeholder="Rua, Avenida, etc.">
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-3">
+                    <div>
+                        <label>Número</label>
+                        <input type="text" id="numero" placeholder="Nº">
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label>Complemento</label>
+                        <input type="text" id="complemento" placeholder="Apto, Bloco, etc.">
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-3">
+                    <div>
+                        <label>Bairro</label>
+                        <input type="text" id="bairro" placeholder="Bairro">
+                    </div>
+                    <div>
+                        <label>Cidade</label>
+                        <input type="text" id="cidade" placeholder="Cidade">
+                    </div>
+                    <div>
+                        <label>Estado</label>
+                        <select id="estado">
+                            <option value="">UF</option>
+                            <option value="AC">AC</option>
+                            <option value="AL">AL</option>
+                            <option value="AP">AP</option>
+                            <option value="AM">AM</option>
+                            <option value="BA">BA</option>
+                            <option value="CE">CE</option>
+                            <option value="DF">DF</option>
+                            <option value="ES">ES</option>
+                            <option value="GO">GO</option>
+                            <option value="MA">MA</option>
+                            <option value="MT">MT</option>
+                            <option value="MS">MS</option>
+                            <option value="MG">MG</option>
+                            <option value="PA">PA</option>
+                            <option value="PB">PB</option>
+                            <option value="PR">PR</option>
+                            <option value="PE">PE</option>
+                            <option value="PI">PI</option>
+                            <option value="RJ">RJ</option>
+                            <option value="RN">RN</option>
+                            <option value="RS">RS</option>
+                            <option value="RO">RO</option>
+                            <option value="RR">RR</option>
+                            <option value="SC">SC</option>
+                            <option value="SP">SP</option>
+                            <option value="SE">SE</option>
+                            <option value="TO">TO</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid form-grid-3">
+                    <div>
+                        <label>Telefone</label>
+                        <input type="text" id="telefone" placeholder="(00) 0000-0000">
+                    </div>
+                    <div>
+                        <label>Celular</label>
+                        <input type="text" id="celular" placeholder="(00) 00000-0000">
+                    </div>
+                    <div>
+                        <label>E-mail</label>
+                        <input type="email" id="email" placeholder="email@exemplo.com">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div style="grid-column: 1 / -1;">
+                        <label>Observação</label>
+                        <textarea id="observacao" rows="3" placeholder="Observações adicionais"></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" id="btnSalvar">Salvar Visitante</button>
+                    <button type="button" class="btn-cancel" onclick="cancelarEdicao()">Cancelar</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="table-section">
+            <h2>Lista de Visitantes</h2>
+            
+            <div class="search-box">
+                <input type="text" id="campoBusca" placeholder="Buscar por nome ou documento...">
+                <button onclick="buscarVisitantes()"><i class="fas fa-search"></i> Buscar</button>
+                <button class="btn-cancel" onclick="limparBusca()"><i class="fas fa-eraser"></i> Limpar</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Carregando...</p>
+            </div>
+
+            <table id="visitantesTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Documento</th>
+                        <th>Telefone</th>
+                        <th>Celular</th>
+                        <th>Cidade/UF</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+            </div>
+            <!-- FIM ABA: VISITANTES -->
+            
+            <!-- ABA: ACESSOS -->
+            <div id="tab-acessos" class="tab-content">
+                <section class="form-section" style="box-shadow: none; padding: 0; margin-bottom: 1.5rem;">
+                    <h2 id="formTitleAcesso">Novo Acesso</h2>
+                    
+                    <form id="acessoForm">
+                        <input type="hidden" id="acessoId">
+                        
+                        <div class="form-grid form-grid-2">
+                            <div>
+                                <label for="visitanteSelecionado">Visitante *</label>
+                                <select id="visitanteSelecionado" required>
+                                    <option value="">Selecione um visitante</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="tipoVisitante">Tipo *</label>
+                                <select id="tipoVisitante" required>
+                                    <option value="visitante">Visitante</option>
+                                    <option value="prestador">Prestador de Serviço</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid form-grid-2">
+                            <div>
+                                <label for="moradorResponsavel">Morador Responsável</label>
+                                <select id="moradorResponsavel">
+                                    <option value="">Selecione um morador</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="unidadeDestino">Unidade Destino</label>
+                                <input type="text" id="unidadeDestino" placeholder="Ex: Gleba 180">
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #1e293b;"><i class="fas fa-car"></i> Dados do Veículo</h3>
+                        
+                        <div class="form-grid form-grid-3">
+                            <div>
+                                <label for="placaVeiculo">Placa</label>
+                                <input type="text" id="placaVeiculo" placeholder="ABC-1234" maxlength="8" style="text-transform: uppercase;">
+                            </div>
+                            <div>
+                                <label for="modeloVeiculo">Modelo</label>
+                                <input type="text" id="modeloVeiculo" placeholder="Ex: Gol">
+                            </div>
+                            <div>
+                                <label for="corVeiculo">Cor</label>
+                                <input type="text" id="corVeiculo" placeholder="Ex: Preto">
+                            </div>
+                        </div>
+                        
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #1e293b;"><i class="fas fa-calendar"></i> Período de Acesso</h3>
+                        
+                        <div class="form-grid form-grid-2">
+                            <div>
+                                <label for="dataInicial">Data Inicial *</label>
+                                <input type="date" id="dataInicial" required>
+                            </div>
+                            <div>
+                                <label for="dataFinal">Data Final *</label>
+                                <input type="date" id="dataFinal" required>
+                            </div>
+                        </div>
+                        
+                        <div id="diasPermanenciaBox" class="dias-permanencia" style="display:none;">
+                            <div class="numero" id="diasPermanenciaNumero">0</div>
+                            <div class="texto">dias de permanência</div>
+                        </div>
+                        
+                        <div>
+                            <label>Tipo de Acesso *</label>
+                            <div class="tipo-acesso-selector">
+                                <label class="tipo-acesso-option" onclick="selecionarTipoAcesso('portaria')">
+                                    <input type="radio" name="tipoAcesso" value="portaria" required>
+                                    <div><i class="fas fa-door-open" style="color: #3b82f6;"></i></div>
+                                    <div class="label">Acesso Portaria</div>
+                                </label>
+                                <label class="tipo-acesso-option" onclick="selecionarTipoAcesso('externo')">
+                                    <input type="radio" name="tipoAcesso" value="externo" required>
+                                    <div><i class="fas fa-road" style="color: #f59e0b;"></i></div>
+                                    <div class="label">Acesso Externo</div>
+                                </label>
+                                <label class="tipo-acesso-option" onclick="selecionarTipoAcesso('lagoa')">
+                                    <input type="radio" name="tipoAcesso" value="lagoa" required>
+                                    <div><i class="fas fa-water" style="color: #10b981;"></i></div>
+                                    <div class="label">Acesso Lagoa</div>
+                                </label>
+                            <                        </div>
+                        
+                        <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #1e293b;"><i class="fas fa-fingerprint"></i> Tipo de Identificação</h3>
+                        
+                        <div>
+                            <label>Método de Identificação *</label>
+                            <div class="tipo-acesso-selector" style="grid-template-columns: repeat(2, 1fr);">
+                                <label class="tipo-acesso-option selected" onclick="selecionarTipoIdentificacao('qrcode')">
+                                    <input type="radio" name="tipoIdentificacao" value="qrcode" checked required>
+                                    <div><i class="fas fa-qrcode" style="color: #3b82f6;"></i></div>
+                                    <div class="label">QR Code</div>
+                                </label>
+                                <label class="tipo-acesso-option" onclick="selecionarTipoIdentificacao('face_id')">
+                                    <input type="radio" name="tipoIdentificacao" value="face_id" required>
+                                    <div><i class="fas fa-face-smile" style="color: #8b5cf6;"></i></div>
+                                    <div class="label">Face ID</div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Informações QR Code -->
+                        <div id="qrcode-info" class="info-box" style="display: block;">
+                            <i class="fas fa-info-circle"></i> <strong>QR Code:</strong> Será gerado automaticamente após o cadastro do acesso.
+                        </div>
+                        
+                        <!-- Informações Face ID -->
+                        <div id="faceid-info" class="info-box" style="display: none; background: #f5f3ff; border-color: #8b5cf6;">
+                            <i class="fas fa-info-circle"></i> <strong>Face ID:</strong> Link único será gerado para o visitante cadastrar seu reconhecimento facial.
+                            
+                            <div style="margin-top: 1rem;">
+                                <button type="button" class="btn-edit" id="btn-gerar-link-faceid" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                                    <i class="fas fa-link"></i> Gerar Link de Cadastro
+                                </button>
+                            </div>
+                            
+                            <div id="link-faceid-gerado" style="display: none; margin-top: 1rem; padding: 1rem; background: #fff; border-radius: 8px;">
+                                <label style="font-size: 0.85rem; color: #64748b;">Link de Cadastro (válido por 48h):</label>
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <input type="text" id="link-faceid" readonly style="flex: 1; font-size: 0.85rem; background: #f8fafc;">
+                                    <button type="button" class="btn-edit" id="btn-copiar-link" style="padding: 0.5rem 1rem;">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                    <button type="button" class="btn-edit" id="btn-enviar-whatsapp" style="background: linear-gradient(135deg, #22c55e, #16a34a); padding: 0.5rem 1rem;">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </button>
+                                </div>
+                                <input type="hidden" id="face_token">
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: right; margin-top: 1.5rem;">                <button type="submit"><i class="fas fa-save"></i> Salvar Acesso</button>
+                            <button type="button" class="btn-cancel" onclick="cancelarEdicaoAcesso()">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
+                
+                <section class="table-section" style="box-shadow: none; padding: 0;">
+                    <h2>Lista de Acessos</h2>
+                    
+                    <div class="loading" id="loadingAcessos">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p>Carregando...</p>
+                    </div>
+                    
+                    <table id="acessosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Visitante</th>
+                                <th>Período</th>
+                                <th>Dias</th>
+                                <th>Tipo de Acesso</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </section>
+            </div>
+            <!-- FIM ABA: ACESSOS -->
+        </div>
+    </main>
+
+    <script>
+        let editandoId = null;
+
+        // Carregar ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarVisitantes();
+            aplicarMascaras();
+            configurarBuscaCEP();
+        });
+
+        // Aplicar máscaras
+        function aplicarMascaras() {
+            // Máscara de CEP
+            document.getElementById('cep').addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, '');
+                if (valor.length <= 8) {
+                    valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
+                }
+                e.target.value = valor;
+            });
+
+            // Máscara de CPF/RG
+            document.getElementById('tipoDocumento').addEventListener('change', function() {
+                document.getElementById('documento').value = '';
+            });
+
+            document.getElementById('documento').addEventListener('input', function(e) {
+                const tipo = document.getElementById('tipoDocumento').value;
+                let valor = e.target.value.replace(/\D/g, '');
+                
+                if (tipo === 'CPF') {
+                    if (valor.length <= 11) {
+                        valor = valor.replace(/^(\d{3})(\d)/, '$1.$2');
+                        valor = valor.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
+                        valor = valor.replace(/\.(\d{3})(\d)/, '.$1-$2');
+                    }
+                } else {
+                    if (valor.length <= 9) {
+                        valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+                        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                        valor = valor.replace(/\.(\d{3})(\d)/, '.$1-$2');
+                    }
+                }
+                e.target.value = valor;
+            });
+
+            // Máscara de telefone
+            document.getElementById('telefone').addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, '');
+                if (valor.length <= 10) {
+                    valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+                    valor = valor.replace(/(\d)(\d{4})$/, '$1-$2');
+                }
+                e.target.value = valor;
+            });
+
+            // Máscara de celular
+            document.getElementById('celular').addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, '');
+                if (valor.length <= 11) {
+                    valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+                    valor = valor.replace(/(\d)(\d{4})$/, '$1-$2');
+                }
+                e.target.value = valor;
+            });
+        }
+
+        // Configurar busca de CEP
+        function configurarBuscaCEP() {
+            document.getElementById('cep').addEventListener('blur', function() {
+                const cep = this.value.replace(/\D/g, '');
+                
+                if (cep.length === 8) {
+                    buscarCEP(cep);
+                }
+            });
+        }
+
+        // Buscar CEP nos Correios
+        function buscarCEP(cep) {
+            const loading = document.getElementById('cepLoading');
+            loading.classList.add('active');
+            
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    loading.classList.remove('active');
+                    
+                    if (data.erro) {
+                        mostrarAlerta('error', 'CEP não encontrado. Preencha o endereço manualmente.');
+                        return;
+                    }
+                    
+                    // Preencher campos
+                    document.getElementById('endereco').value = data.logradouro || '';
+                    document.getElementById('bairro').value = data.bairro || '';
+                    document.getElementById('cidade').value = data.localidade || '';
+                    document.getElementById('estado').value = data.uf || '';
+                    
+                    // Focar no campo número
+                    document.getElementById('numero').focus();
+                    
+                    mostrarAlerta('success', 'CEP encontrado! Endereço preenchido automaticamente.');
+                })
+                .catch(error => {
+                    loading.classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao buscar CEP. Preencha o endereço manualmente.');
+                    console.error('Erro ao buscar CEP:', error);
+                });
+        }
+
+        // Carregar visitantes
+        function carregarVisitantes() {
+            document.getElementById('loading').classList.add('active');
+            
+            fetch('../api/api_visitantes.php')
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('loading').classList.remove('active');
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            renderizarTabela(data.dados);
+                        } else {
+                            mostrarAlerta('error', data.mensagem);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao processar visitantes:', text);
+                        mostrarAlerta('error', 'Erro ao carregar visitantes');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao carregar visitantes: ' + error.message);
+                });
+        }
+
+        // Buscar visitantes
+        function buscarVisitantes() {
+            const busca = document.getElementById('campoBusca').value;
+            document.getElementById('loading').classList.add('active');
+            
+            fetch(`api/api_visitantes.php?busca=${encodeURIComponent(busca)}`)
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('loading').classList.remove('active');
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            renderizarTabela(data.dados);
+                        } else {
+                            mostrarAlerta('error', data.mensagem);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao processar busca:', text);
+                        mostrarAlerta('error', 'Erro ao buscar visitantes');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao buscar: ' + error.message);
+                });
+        }
+
+        // Limpar busca
+        function limparBusca() {
+            document.getElementById('campoBusca').value = '';
+            carregarVisitantes();
+        }
+
+        // Renderizar tabela
+        function renderizarTabela(visitantes) {
+            const tbody = document.querySelector('#visitantesTable tbody');
+            tbody.innerHTML = '';
+
+            if (visitantes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum visitante cadastrado</td></tr>';
+                return;
+            }
+
+            visitantes.forEach(v => {
+                const tr = document.createElement('tr');
+                const cidadeUF = v.cidade && v.estado ? `${v.cidade}/${v.estado}` : (v.cidade || v.estado || '-');
+                
+                tr.innerHTML = `
+                    <td>${v.id}</td>
+                    <td><strong>${v.nome_completo}</strong></td>
+                    <td>${v.tipo_documento}: ${v.documento}</td>
+                    <td>${v.telefone || '-'}</td>
+                    <td>${v.celular || '-'}</td>
+                    <td>${cidadeUF}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editarVisitante(${v.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete" onclick="excluirVisitante(${v.id}, '${v.nome_completo}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Salvar visitante
+        document.getElementById('visitanteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dados = {
+                nome_completo: document.getElementById('nomeCompleto').value,
+                documento: document.getElementById('documento').value.replace(/\D/g, ''),
+                tipo_documento: document.getElementById('tipoDocumento').value,
+                cep: document.getElementById('cep').value.replace(/\D/g, ''),
+                endereco: document.getElementById('endereco').value,
+                numero: document.getElementById('numero').value,
+                complemento: document.getElementById('complemento').value,
+                bairro: document.getElementById('bairro').value,
+                cidade: document.getElementById('cidade').value,
+                estado: document.getElementById('estado').value,
+                telefone: document.getElementById('telefone').value,
+                celular: document.getElementById('celular').value,
+                email: document.getElementById('email').value,
+                observacao: document.getElementById('observacao').value
+            };
+
+            const metodo = editandoId ? 'PUT' : 'POST';
+            if (editandoId) {
+                dados.id = editandoId;
+            }
+
+            fetch('../api/api_visitantes.php', {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            })
+            .then(response => response.text())
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.sucesso) {
+                        mostrarAlerta('success', data.mensagem);
+                        limparFormulario();
+                        carregarVisitantes();
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                } catch (e) {
+                    console.error('Resposta do servidor:', text);
+                    mostrarAlerta('error', 'Erro ao processar resposta. Verifique se o cadastro foi realizado.');
+                    carregarVisitantes();
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao salvar: ' + error.message);
+            });
+        });
+
+        // Editar visitante
+        function editarVisitante(id) {
+            fetch('../api/api_visitantes.php')
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            const visitante = data.dados.find(v => v.id == id);
+                            if (visitante) {
+                                editandoId = id;
+                                document.getElementById('formTitle').textContent = 'Editar Visitante';
+                                document.getElementById('visitanteId').value = visitante.id;
+                                document.getElementById('nomeCompleto').value = visitante.nome_completo;
+                                document.getElementById('tipoDocumento').value = visitante.tipo_documento;
+                                document.getElementById('documento').value = visitante.documento;
+                                document.getElementById('cep').value = visitante.cep || '';
+                                document.getElementById('endereco').value = visitante.endereco || '';
+                                document.getElementById('numero').value = visitante.numero || '';
+                                document.getElementById('complemento').value = visitante.complemento || '';
+                                document.getElementById('bairro').value = visitante.bairro || '';
+                                document.getElementById('cidade').value = visitante.cidade || '';
+                                document.getElementById('estado').value = visitante.estado || '';
+                                document.getElementById('telefone').value = visitante.telefone || '';
+                                document.getElementById('celular').value = visitante.celular || '';
+                                document.getElementById('email').value = visitante.email || '';
+                                document.getElementById('observacao').value = visitante.observacao || '';
+                                
+                                document.getElementById('btnSalvar').textContent = 'Atualizar Visitante';
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Erro ao carregar visitante:', e);
+                    }
+                });
+        }
+
+        // Excluir visitante
+        function excluirVisitante(id, nome) {
+            if (!confirm(`Deseja realmente excluir o visitante "${nome}"?`)) {
+                return;
+            }
+
+            fetch('../api/api_visitantes.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.text())
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.sucesso) {
+                        mostrarAlerta('success', data.mensagem);
+                        carregarVisitantes();
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                } catch (e) {
+                    console.error('Erro ao excluir:', text);
+                    mostrarAlerta('error', 'Erro ao excluir visitante');
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao excluir: ' + error.message);
+            });
+        }
+
+        // Cancelar edição
+        function cancelarEdicao() {
+            limparFormulario();
+        }
+
+        // Limpar formulário
+        function limparFormulario() {
+            document.getElementById('visitanteForm').reset();
+            editandoId = null;
+            document.getElementById('formTitle').textContent = 'Novo Visitante';
+            document.getElementById('btnSalvar').textContent = 'Salvar Visitante';
+            document.getElementById('visitanteId').value = '';
+        }
+
+        // Mostrar alerta
+        function mostrarAlerta(tipo, mensagem) {
+            const alertBox = document.getElementById('alertBox');
+            const classe = tipo === 'success' ? 'alert-success' : 'alert-error';
+            const icone = tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            alertBox.innerHTML = `<div class="alert ${classe}"><i class="fas ${icone}"></i> ${mensagem}</div>`;
+            
+            setTimeout(() => {
+                alertBox.innerHTML = '';
+            }, 5000);
+        }
+        // Toggle menu mobile
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+        
+        // ========================================
+        // SISTEMA DE ABAS
+        // ========================================
+        function abrirAba(aba) {
+            // Remover classe active de todas as tabs
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Adicionar classe active na aba selecionada
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById('tab-' + aba).classList.add('active');
+            
+            // Carregar dados da aba
+            if (aba === 'acessos') {
+                carregarVisitantesSelect();
+                carregarAcessos();
+            }
+        }
+        
+        // ========================================
+        // GERENCIAMENTO DE ACESSOS
+        // ========================================
+        let editandoAcessoId = null;
+        
+        // Carregar visitantes no select
+        function carregarVisitantesSelect() {
+            fetch('../api/api_visitantes.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        const select = document.getElementById('visitanteSelecionado');
+                        select.innerHTML = '<option value="">Selecione um visitante</option>';
+                        
+                        data.dados.forEach(v => {
+                            const option = document.createElement('option');
+                            option.value = v.id;
+                            option.textContent = `${v.nome_completo} - ${v.documento}`;
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar visitantes:', error);
+                });
+            
+            // Carregar moradores
+            fetch('../api/api_moradores.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        const select = document.getElementById('moradorResponsavel');
+                        select.innerHTML = '<option value="">Selecione um morador</option>';
+                        
+                        data.dados.forEach(m => {
+                            const option = document.createElement('option');
+                            option.value = m.id;
+                            option.textContent = `${m.nome} - ${m.unidade}`;
+                            option.setAttribute('data-unidade', m.unidade);
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar moradores:', error);
+                });
+        }
+        
+        // Preencher unidade ao selecionar morador
+        document.getElementById('moradorResponsavel')?.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const unidade = selectedOption.getAttribute('data-unidade');
+            if (unidade) {
+                document.getElementById('unidadeDestino').value = unidade;
+            }
+        });
+        
+        // Calcular dias de permanência
+        document.getElementById('dataInicial')?.addEventListener('change', calcularDias);
+        document.getElementById('dataFinal')?.addEventListener('change', calcularDias);
+        
+        function calcularDias() {
+            const dataInicial = document.getElementById('dataInicial').value;
+            const dataFinal = document.getElementById('dataFinal').value;
+            
+            if (dataInicial && dataFinal) {
+                const dt1 = new Date(dataInicial);
+                const dt2 = new Date(dataFinal);
+                
+                if (dt2 >= dt1) {
+                    const diffTime = Math.abs(dt2 - dt1);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    document.getElementById('diasPermanenciaNumero').textContent = diffDays;
+                    document.getElementById('diasPermanenciaBox').style.display = 'block';
+                } else {
+                    mostrarAlerta('error', 'Data final deve ser maior ou igual à data inicial');
+                    document.getElementById('diasPermanenciaBox').style.display = 'none';
+                }
+            }
+        }
+        
+        // Selecionar tipo de acesso
+        function selecionarTipoAcesso(tipo) {
+            document.querySelectorAll('.tipo-acesso-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            document.querySelector(`input[value="${tipo}"]`).checked = true;
+        }
+        
+        // Salvar acesso
+        document.getElementById('acessoForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const visitanteId = document.getElementById('visitanteSelecionado').value;
+            const dataInicial = document.getElementById('dataInicial').value;
+            const dataFinal = document.getElementById('dataFinal').value;
+            const tipoAcesso = document.querySelector('input[name="tipoAcesso"]:checked')?.value;
+            const tipoVisitante = document.getElementById('tipoVisitante').value;
+            const moradorId = document.getElementById('moradorResponsavel').value || null;
+            const unidadeDestino = document.getElementById('unidadeDestino').value || null;
+            const placa = document.getElementById('placaVeiculo').value || null;
+            const modelo = document.getElementById('modeloVeiculo').value || null;
+            const cor = document.getElementById('corVeiculo').value || null;
+            
+            if (!visitanteId || !dataInicial || !dataFinal || !tipoAcesso) {
+                mostrarAlerta('error', 'Preencha todos os campos obrigatórios');
+                return;
+            }
+            
+            const dados = {
+                visitante_id: visitanteId,
+                data_inicial: dataInicial,
+                data_final: dataFinal,
+                tipo_acesso: tipoAcesso,
+                tipo_visitante: tipoVisitante,
+                morador_id: moradorId,
+                unidade_destino: unidadeDestino,
+                placa: placa,
+                modelo: modelo,
+                cor: cor
+            };
+            
+            const url = editandoAcessoId 
+                ? 'api_acessos_visitantes.php'
+                : 'api_acessos_visitantes.php';
+            
+            const metodo = editandoAcessoId ? 'PUT' : 'POST';
+            
+            if (editandoAcessoId) {
+                dados.id = editandoAcessoId;
+            }
+            
+            fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    mostrarAlerta('success', data.mensagem);
+                    document.getElementById('acessoForm').reset();
+                    document.getElementById('diasPermanenciaBox').style.display = 'none';
+                    document.querySelectorAll('.tipo-acesso-option').forEach(opt => opt.classList.remove('selected'));
+                    editandoAcessoId = null;
+                    document.getElementById('formTitleAcesso').textContent = 'Novo Acesso';
+                    carregarAcessos();
+                } else {
+                    mostrarAlerta('error', data.mensagem);
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao salvar acesso: ' + error.message);
+            });
+        });
+        
+        // Carregar acessos
+        function carregarAcessos() {
+            document.getElementById('loadingAcessos').classList.add('active');
+            
+            fetch('../api/api_acessos_visitantes.php')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loadingAcessos').classList.remove('active');
+                    if (data.sucesso) {
+                        renderizarTabelaAcessos(data.dados);
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loadingAcessos').classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao carregar acessos: ' + error.message);
+                });
+        }
+        
+        // Renderizar tabela de acessos
+        function renderizarTabelaAcessos(acessos) {
+            const tbody = document.querySelector('#acessosTable tbody');
+            tbody.innerHTML = '';
+            
+            if (acessos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum acesso cadastrado</td></tr>';
+                return;
+            }
+            
+            acessos.forEach(a => {
+                const tr = document.createElement('tr');
+                
+                // Badge de tipo de acesso
+                let badgeTipo = '';
+                if (a.tipo_acesso === 'portaria') badgeTipo = '<span class="badge badge-portaria">Portaria</span>';
+                if (a.tipo_acesso === 'externo') badgeTipo = '<span class="badge badge-externo">Externo</span>';
+                if (a.tipo_acesso === 'lagoa') badgeTipo = '<span class="badge badge-lagoa">Lagoa</span>';
+                
+                // Badge de status
+                const hoje = new Date().toISOString().split('T')[0];
+                let badgeStatus = '';
+                if (a.ativo == 1 && a.data_final >= hoje) {
+                    badgeStatus = '<span class="badge badge-ativo">Ativo</span>';
+                } else {
+                    badgeStatus = '<span class="badge badge-inativo">Inativo</span>';
+                }
+                
+                // Formatar datas
+                const dtInicial = new Date(a.data_inicial + 'T00:00:00').toLocaleDateString('pt-BR');
+                const dtFinal = new Date(a.data_final + 'T00:00:00').toLocaleDateString('pt-BR');
+                
+                tr.innerHTML = `
+                    <td>${a.id}</td>
+                    <td>${a.visitante_nome}</td>
+                    <td>${dtInicial} a ${dtFinal}</td>
+                    <td>${a.dias_permanencia}</td>
+                    <td>${badgeTipo}</td>
+                    <td>${badgeStatus}</td>
+                    <td>
+                        <button class="btn-qrcode" onclick="gerarQRCode(${a.id})" title="Gerar QR Code">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                        <button class="btn-delete" onclick="excluirAcesso(${a.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // Gerar QR Code
+        function gerarQRCode(id) {
+            console.log('🔵 [DEBUG QR] Iniciando geração de QR Code para acesso ID:', id);
+            
+            const url = `api_acessos_visitantes.php?action=gerar_qrcode&id=${id}`;
+            console.log('🔵 [DEBUG QR] URL:', url);
+            
+            fetch(url)
+                .then(response => {
+                    console.log('🔵 [DEBUG QR] Resposta recebida:', response.status, response.statusText);
+                    if (!response.ok) {
+                        console.error('❌ [DEBUG QR] Resposta não OK:', response);
+                        // Registrar erro no banco
+                        registrarErro('api', 'error', 'visitantes.html', 'gerarQRCode', 
+                            `Resposta HTTP ${response.status}: ${response.statusText}`,
+                            {acesso_id: id, url: url});
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ [DEBUG QR] Dados parseados:', data);
+                    if (data.sucesso) {
+                        console.log('✅ [DEBUG QR] QR Code gerado com sucesso');
+                        mostrarModalQRCode(data.dados);
+                    } else {
+                        console.error('❌ [DEBUG QR] Erro retornado pela API:', data.mensagem);
+                        // Registrar erro no banco
+                        registrarErro('api', 'error', 'visitantes.html', 'gerarQRCode', 
+                            data.mensagem, {acesso_id: id, dados: data});
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ [DEBUG QR] Erro capturado:', error);
+                    console.error('❌ [DEBUG QR] Tipo:', error.name);
+                    console.error('❌ [DEBUG QR] Mensagem:', error.message);
+                    if (error.stack) {
+                        console.error('❌ [DEBUG QR] Stack:', error.stack);
+                    }
+                    
+                    // FALLBACK: Tentar gerar QR Code no JavaScript
+                    console.log('🔄 [QR FALLBACK] Tentando gerar QR Code no JavaScript...');
+                    gerarQRCodeJavaScript(id);
+                    
+                    // Registrar erro no banco
+                    registrarErro('javascript', 'error', 'visitantes.html', 'gerarQRCode', 
+                        error.message, {acesso_id: id, stack: error.stack, fallback: 'javascript'});
+                });
+        }
+        
+        // FALLBACK: Gerar QR Code usando JavaScript (qrcode.js)
+        function gerarQRCodeJavaScript(id) {
+            console.log('🟡 [QR FALLBACK] Gerando QR Code no cliente com JavaScript');
+            
+            // Buscar dados do acesso
+            fetch(`api/api_acessos_visitantes.php?action=listar&id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.sucesso || !data.dados || data.dados.length === 0) {
+                        throw new Error('Acesso não encontrado');
+                    }
+                    
+                    const acesso = data.dados[0];
+                    
+                    // Gerar token simples no cliente (menos seguro, mas funciona)
+                    const token = 'js-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                    
+                    // Montar dados do QR Code
+                    const qrData = JSON.stringify({
+                        token: token,
+                        codigo: acesso.qr_code,
+                        visitante: acesso.visitante_nome,
+                        documento: acesso.visitante_documento,
+                        tipo_acesso: acesso.tipo_acesso,
+                        valido_de: acesso.data_inicial,
+                        valido_ate: acesso.data_final,
+                        timestamp: Date.now(),
+                        metodo: 'javascript_fallback'
+                    });
+                    
+                    console.log('🟡 [QR FALLBACK] Dados preparados:', qrData);
+                    
+                    // Criar elemento temporário para gerar QR Code
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.display = 'none';
+                    document.body.appendChild(tempDiv);
+                    
+                    // Gerar QR Code com qrcode.js
+                    try {
+                        const qrcode = new QRCode(tempDiv, {
+                            text: qrData,
+                            width: 300,
+                            height: 300,
+                            colorDark: '#000000',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                        
+                        // Aguardar geração e extrair imagem
+                        setTimeout(() => {
+                            const canvas = tempDiv.querySelector('canvas');
+                            if (canvas) {
+                                const qrBase64 = canvas.toDataURL('image/png');
+                                console.log('✅ [QR FALLBACK] QR Code gerado com sucesso no JavaScript');
+                                
+                                // Mostrar modal
+                                mostrarModalQRCode({
+                                    qr_code_imagem: qrBase64,
+                                    qr_data: qrData,
+                                    token: { token: token, metodo: 'javascript_fallback' },
+                                    acesso: acesso,
+                                    metodo: 'javascript_fallback'
+                                });
+                                
+                                // Remover elemento temporário
+                                document.body.removeChild(tempDiv);
+                            } else {
+                                throw new Error('Canvas não encontrado');
+                            }
+                        }, 500);
+                        
+                    } catch (err) {
+                        console.error('❌ [QR FALLBACK] Erro ao gerar QR Code no JavaScript:', err);
+                        document.body.removeChild(tempDiv);
+                        mostrarAlerta('error', 'Não foi possível gerar QR Code. Entre em contato com o suporte.');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ [QR FALLBACK] Erro ao buscar dados do acesso:', error);
+                    mostrarAlerta('error', 'Erro ao buscar dados do acesso: ' + error.message);
+                });
+        }
+        
+        // Mostrar modal com QR Code
+        function mostrarModalQRCode(dados) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999;';
+            
+            const dtInicial = new Date(dados.acesso.data_inicial + 'T00:00:00').toLocaleDateString('pt-BR');
+            const dtFinal = new Date(dados.acesso.data_final + 'T00:00:00').toLocaleDateString('pt-BR');
+            
+            modal.innerHTML = `
+                <div style="background: #fff; padding: 2rem; border-radius: 12px; max-width: 500px; text-align: center;">
+                    <h2 style="margin-bottom: 1rem;"><i class="fas fa-qrcode"></i> QR Code de Acesso</h2>
+                    <div class="qr-container">
+                        <img src="${dados.qr_code_imagem}" class="qr-image" alt="QR Code">
+                        <div class="qr-info">
+                            <strong>${dados.acesso.visitante_nome}</strong><br>
+                            Documento: ${dados.acesso.documento}<br>
+                            Tipo: ${dados.acesso.tipo_acesso.toUpperCase()}<br>
+                            Válido: ${dtInicial} a ${dtFinal}
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn-download" onclick="downloadQRCode('${dados.qr_code_imagem}', '${dados.acesso.qr_code}')">
+                            <i class="fas fa-download"></i> Baixar QR Code
+                        </button>
+                        <button class="btn-cancel" onclick="this.closest('div').parentElement.remove()">
+                            <i class="fas fa-times"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Fechar ao clicar fora
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        // Download QR Code
+        function downloadQRCode(base64, filename) {
+            const link = document.createElement('a');
+            link.href = base64;
+            link.download = `qrcode-${filename}.png`;
+            link.click();
+        }
+        
+        // Excluir acesso
+        function excluirAcesso(id) {
+            if (!confirm('Deseja realmente excluir este acesso?')) return;
+            
+            fetch(`api/api_acessos_visitantes.php?id=${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    mostrarAlerta('success', data.mensagem);
+                    carregarAcessos();
+                } else {
+                    mostrarAlerta('error', data.mensagem);
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao excluir acesso: ' + error.message);
+            });
+        }
+        
+        // Cancelar edição de acesso
+        function cancelarEdicaoAcesso() {
+            document.getElementById('acessoForm').reset();
+            document.getElementById('diasPermanenciaBox').style.display = 'none';
+            document.querySelectorAll('.tipo-acesso-option').forEach(opt => opt.classList.remove('selected'));
+            editandoAcessoId = null;
+            document.getElementById('formTitleAcesso').textContent = 'Novo Acesso';
+        }
+
+        // Fechar menu ao clicar fora (mobile)
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Função para registrar erros no banco de dados
+        function registrarErro(tipo, nivel, arquivo, funcao, mensagem, contexto = {}) {
+            console.log('📝 [LOG] Registrando erro no banco:', {tipo, nivel, arquivo, funcao, mensagem});
+            
+            const dados = {
+                tipo: tipo,
+                nivel: nivel,
+                arquivo: arquivo,
+                funcao: funcao,
+                mensagem: mensagem,
+                contexto: JSON.stringify(contexto),
+                url: window.location.href,
+                user_agent: navigator.userAgent
+            };
+            
+            fetch('../api/api_logs_erro.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    console.log('✅ [LOG] Erro registrado com ID:', data.log_id);
+                } else {
+                    console.warn('⚠️ [LOG] Falha ao registrar erro:', data.mensagem);
+                }
+            })
+            .catch(error => {
+                console.error('❌ [LOG] Erro ao registrar erro:', error);
+            });
+        }
+        
+        // ========================================
+        // FUNÇÕES FACE ID
+        // ========================================
+        
+        // Selecionar tipo de identificação
+        function selecionarTipoIdentificacao(tipo) {
+            // Remover seleção anterior
+            document.querySelectorAll('#faceid-info').forEach(box => {
+                box.closest('.tipo-acesso-selector').querySelectorAll('.tipo-acesso-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+            });
+            
+            // Adicionar seleção atual
+            event.currentTarget.classList.add('selected');
+            
+            // Mostrar/ocultar informações
+            if (tipo === 'qrcode') {
+                document.getElementById('qrcode-info').style.display = 'block';
+                document.getElementById('faceid-info').style.display = 'none';
+            } else {
+                document.getElementById('qrcode-info').style.display = 'none';
+                document.getElementById('faceid-info').style.display = 'block';
+            }
+        }
+        
+        // Gerar link de Face ID
+        document.getElementById('btn-gerar-link-faceid').addEventListener('click', async function() {
+            const visitante_id = document.getElementById('visitanteSelecionado').value;
+            
+            if (!visitante_id) {
+                alert('⚠️ Selecione um visitante primeiro');
+                return;
+            }
+            
+            // Desabilitar botão
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
+            
+            try {
+                const response = await fetch('../api/api_face_id.php?action=gerar_token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        visitante_id: visitante_id,
+                        validade_horas: 48
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.sucesso) {
+                    // Exibir link
+                    document.getElementById('link-faceid').value = result.dados.link_cadastro;
+                    document.getElementById('link-faceid-gerado').style.display = 'block';
+                    document.getElementById('face_token').value = result.dados.token;
+                    
+                    // Reabilitar botão
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-check"></i> Link Gerado!';
+                    
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fas fa-link"></i> Gerar Link de Cadastro';
+                    }, 3000);
+                    
+                    mostrarAlerta('success', '✅ Link gerado com sucesso! Válido por 48 horas.');
+                } else {
+                    throw new Error(result.mensagem);
+                }
+            } catch (error) {
+                console.error('[FACE-ID] Erro:', error);
+                mostrarAlerta('error', '❌ Erro ao gerar link: ' + error.message);
+                
+                // Reabilitar botão
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-link"></i> Gerar Link de Cadastro';
+            }
+        });
+        
+        // Copiar link
+        document.getElementById('btn-copiar-link').addEventListener('click', function() {
+            const link = document.getElementById('link-faceid');
+            link.select();
+            document.execCommand('copy');
+            
+            // Feedback visual
+            this.innerHTML = '<i class="fas fa-check"></i>';
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-copy"></i>';
+            }, 2000);
+            
+            mostrarAlerta('success', '📋 Link copiado para a área de transferência!');
+        });
+        
+        // Enviar via WhatsApp
+        document.getElementById('btn-enviar-whatsapp').addEventListener('click', function() {
+            const link = document.getElementById('link-faceid').value;
+            const visitante_select = document.getElementById('visitanteSelecionado');
+            const visitante_nome = visitante_select.options[visitante_select.selectedIndex].text;
+            
+            const mensagem = `Olá ${visitante_nome}! 👋
+
+Para acessar o condomínio Serra da Liberdade, cadastre seu *Face ID* (reconhecimento facial) através deste link:
+
+${link}
+
+⚠️ *Importante:*
+• Este link é válido por 48 horas
+• É de uso único e intransferível
+• Você precisará permitir acesso à câmera do seu celular
+
+Att,
+Condomínio Serra da Liberdade`;
+            
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+            window.open(whatsappUrl, '_blank');
+        });
+    </script>
+    
+    <!-- Biblioteca QR Code JavaScript (fallback) -->
+    <script src="qrcode.min.js"></script>
+<script>
+        // ========== FUNÇÃO DE LOGOUT ==========
+        function fazerLogout(event) {
+            event.preventDefault();
+            
+            if (confirm('Deseja realmente sair do sistema?')) {
+                fetch('../api/logout.php', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        // Limpar sessionStorage
+                        sessionStorage.clear();
+                        
+                        // Redirecionar para login
+                        window.location.href = 'login.html';
+                    } else {
+                        alert('Erro ao fazer logout: ' + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                    // Mesmo com erro, limpar e redirecionar
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+    </script>
+    
+    
+    <!-- Proteção de Login -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/user-display.js"></script>
+    <script src="js/user-profile-sidebar.js"></script>
+</body>
+</html>
+
+   

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrativo - Sistema de Controle de Acesso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 2rem 0; overflow-y: auto; z-index: 1000; transition: transform 0.3s; }
+        .sidebar h1 { color: #fff; font-size: 1.3rem; text-align: center; margin-bottom: 2rem; }
+        .nav-menu { list-style: none; padding: 1rem; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-link i { margin-right: 0.75rem; width: 20px; }
+        .menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: #1e293b; color: #fff; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; }
+        .main-content { margin-left: 260px; padding: 2rem; width: 100%; }
+        .header { background: #fff; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .submenu { background: #fff; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .submenu ul { list-style: none; display: flex; gap: 1rem; flex-wrap: wrap; }
+        .submenu a { display: inline-block; padding: 0.75rem 1.5rem; background: #f1f5f9; color: #334155; text-decoration: none; border-radius: 8px; transition: 0.2s; }
+        .submenu a:hover, .submenu a.active { background: #10b981; color: #fff; }
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card { background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); transition: 0.2s; }
+        .card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transform: translateY(-2px); }
+        .card-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .card-icon.green { color: #10b981; }
+        .card-icon.blue { color: #3b82f6; }
+        .card-icon.yellow { color: #f59e0b; }
+        .card-icon.purple { color: #8b5cf6; }
+        .card h3 { color: #1e293b; margin-bottom: 0.5rem; }
+        .card p { color: #64748b; margin-bottom: 1.5rem; line-height: 1.6; }
+        .card a { display: inline-block; padding: 0.6rem 1.5rem; background: #10b981; color: #fff; text-decoration: none; border-radius: 8px; transition: 0.2s; }
+        .card a:hover { background: #059669; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .header { padding: 1rem; }
+            .submenu ul { flex-direction: column; }
+            .submenu a { display: block; text-align: center; }
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    <script src="js/sessao_manager.js"></script>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
+    <div class="main-container">
+        <nav class="sidebar" id="sidebar">
+            <h1>Serra da Liberdade</h1>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="moradores.html" class="nav-link"><i class="fas fa-users"></i> Moradores</a></li>
+            <li class="nav-item"><a href="veiculos.html" class="nav-link"><i class="fas fa-car"></i> Veículos</a></li>
+            <li class="nav-item"><a href="visitantes.html" class="nav-link"><i class="fas fa-user-friends"></i> Visitantes</a></li>
+            <li class="nav-item"><a href="registro.html" class="nav-link"><i class="fas fa-clipboard-list"></i> Registro Manual</a></li>
+            <li class="nav-item"><a href="acesso.html" class="nav-link"><i class="fas fa-door-open"></i> Controle de Acesso</a></li>
+            <li class="nav-item"><a href="relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li class="nav-item"><a href="financeiro.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Financeiro</a></li>
+            <li class="nav-item"><a href="configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+            <li class="nav-item"><a href="manutencao.html" class="nav-link"><i class="fas fa-tools"></i> Manutenção</a></li>
+            <li class="nav-item"><a href="administrativa.html" class="nav-link"><i class="fas fa-briefcase"></i> Administrativo</a></li>
+<li class="nav-item" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <a href="#" class="nav-link" id="btn-logout" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5;" onclick="fazerLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+            </ul>
+        </nav>
+        <main class="main-content">
+            <header class="header">
+                <h1><i class="fas fa-briefcase"></i> Módulo Administrativo</h1>
+            </header>
+            <nav class="submenu">
+                <ul>
+                    <li><a href="administrativa.html"><i class="fas fa-home"></i> Início</a></li>
+                <li><a href="protocolo.html"><i class="fas fa-box"></i> Protocolos</a></li>
+                <li><a href="inventario.html"><i class="fas fa-boxes"></i> Inventário</a></li>
+                <li><a href="relatorios_inventario.html"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+                <li><a href="estoque.html"><i class="fas fa-warehouse"></i> Estoque</a></li>
+                <li><a href="marketplace_admin.html" class="active"><i class="fas fa-store"></i> Marketplace</a></li>
+                </ul>
+            </nav>
+            <div class="cards-grid">
+                <!-- Card Protocolos -->
+                <div class="card">
+                    <div class="card-icon green"><i class="fas fa-box"></i></div>
+                    <h3>Protocolo de Mercadorias</h3>
+                    <p>Gerencie o recebimento e entrega de mercadorias para os moradores. Registre encomendas, controle entregas e mantenha histórico completo.</p>
+                    <a href="protocolo.html">Acessar Protocolos</a>
+                </div>
+                
+                <!-- Card Inventário -->
+                <div class="card">
+                    <div class="card-icon blue"><i class="fas fa-boxes"></i></div>
+                    <h3>Inventário de Patrimônio</h3>
+                    <p>Gerencie o patrimônio do condomínio. Cadastre itens, controle responsáveis, registre baixas e mantenha histórico de bens.</p>
+                    <a href="inventario.html">Acessar Inventário</a>
+                </div>
+                
+                <!-- Card Relatórios -->
+                <div class="card">
+                    <div class="card-icon yellow"><i class="fas fa-chart-bar"></i></div>
+                    <h3>Relatórios Administrativos</h3>
+                    <p>Gere relatórios detalhados de protocolos e inventário. Filtre por período, situação, status e responsável. Exporte para PDF ou Excel.</p>
+                    <a href="relatorios_inventario.html">Ver Relatórios</a>
+                </div>
+                
+                <!-- Card Estoque -->
+                <div class="card">
+                    <div class="card-icon purple"><i class="fas fa-warehouse"></i></div>
+                    <h3>Gestão de Estoque</h3>
+                    <p>Controle completo de estoque do condomínio. Gerencie produtos, categorias, entradas e saídas. Vincule saídas a moradores e gere relatórios detalhados.</p>
+                    <a href="estoque.html">Acessar Estoque</a>
+                </div>
+                
+                <!-- Card Informações -->
+                <div class="card">
+                    <div class="card-icon purple"><i class="fas fa-info-circle"></i></div>
+                    <h3>Informações do Sistema</h3>
+                    <p><strong>Funcionalidades Disponíveis:</strong><br>
+                    • Protocolo de mercadorias<br>
+                    • Inventário de patrimônio<br>
+                    • Gestão de estoque<br>
+                    • Controle de responsáveis<br>
+                    • Relatórios completos</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); }
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+   
+  // ========== FUNÇÃO DE LOGOUT ==========
+        function fazerLogout(event) {
+            event.preventDefault();
+            
+            if (confirm('Deseja realmente sair do sistema?')) {
+                fetch('../api/logout.php', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        // Limpar sessionStorage
+                        sessionStorage.clear();
+                        
+                        // Redirecionar para login
+                        window.location.href = 'login.html';
+                    } else {
+                        alert('Erro ao fazer logout: ' + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                    // Mesmo com erro, limpar e redirecionar
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+    </script>
+    
+    <!-- Proteção de Login -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/user-display.js"></script>
+    <script src="js/user-profile-sidebar.js"></script>
+</body>
+</html>
+

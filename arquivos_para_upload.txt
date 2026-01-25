@@ -1,0 +1,38 @@
+# ARQUIVOS QUE PRECISAM SER ATUALIZADOS NO SERVIDOR
+
+## PRIORIDADE ALTA - Correção de Layout
+dispositivos_console.html
+checklist_visualizar.html
+checklist_fechar.html
+abastecimento.html
+acesso_morador.html
+administrativa.html
+cadastro_fornecedor.html
+cadastros.html
+checklist_alertas.html
+checklist_novo.html
+checklist_preencher.html
+checklist_veicular.html
+config_email_log.html
+config_email_template.html
+config_smtp.html
+configuracao.html
+console_acesso.html
+entrada_estoque.html
+esqueci_senha.html
+estoque.html
+hidrometro.html
+leitura.html
+manutencao.html
+painel_fornecedor.html
+redefinir_senha.html
+relatorio_estoque.html
+relatorios_hidrometro.html
+saida_estoque.html
+
+## NOVOS ARQUIVOS - Debug e Teste
+teste_dispositivo.html
+DEBUG_DISPOSITIVOS.md
+CORRECAO_LAYOUT_CSS.md
+
+## TOTAL: 31 arquivos

@@ -1,0 +1,135 @@
+# =====================================================
+# .gitignore - ERP Associação Serra da Liberdade
+# =====================================================
+
+# Configurações sensíveis
+api/config.php
+config.php
+**/config.php
+.env
+.env.local
+.env.production
+
+# Logs
+api/logs/*.log
+logs/*.log
+*.log
+error_log
+
+# Uploads e arquivos temporários
+uploads/*
+!uploads/.gitkeep
+temp/
+tmp/
+*.tmp
+
+# Arquivos de sessão
+sessions/
+*.sess
+
+# Backups
+backup/
+backups/
+*.backup
+*.bak
+*_backup.php
+*_backup.html
+
+# Banco de dados
+*.sql
+!sql/estrutura_completa.sql
+*.sqlite
+*.db
+
+# Cache
+cache/
+*.cache
+
+# Dependências
+vendor/
+node_modules/
+composer.lock
+package-lock.json
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Arquivos do sistema operacional
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Arquivos de debug
+debug.log
+debug_*.txt
+*_debug.log
+*.debug
+
+# Arquivos de teste
+test_*.php
+*_test.php
+phpunit.xml
+.phpunit.result.cache
+
+# Arquivos compilados
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Arquivos compactados
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Certificados e chaves
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# Arquivos de senha
+passwords.txt
+credentials.txt
+secrets.txt
+
+# Arquivos temporários do PHP
+*.php~
+*.php.bak
+
+# Arquivos de log do Apache/Nginx
+access.log
+error.log
+
+# Arquivos de sessão do PHP
+sess_*
+
+# Arquivos de lock
+*.lock
+
+# Arquivos específicos do projeto
+api/testeAPI/
+apagar fornecedor/
+.well-known/
+
+# Manter estrutura de diretórios vazios
+!.gitkeep

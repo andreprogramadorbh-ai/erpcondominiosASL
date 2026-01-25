@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Veículos - Sistema de Controle de Acesso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 2rem 0; overflow-y: auto; }
+        .sidebar h1 { color: #fff; font-size: 1.3rem; text-align: center; margin-bottom: 2rem; }
+        .nav-menu { list-style: none; padding: 1rem; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-link i { margin-right: 0.75rem; width: 20px; }
+        .main-content { margin-left: 260px; padding: 2rem; width: 100%; }
+        .header { background: #fff; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-section, .table-section { background: #fff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        input, select { width: 100%; padding: 0.6rem; margin-bottom: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        button { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; padding: 0.6rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-edit { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-delete { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-toggle { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .btn-cancel { background: linear-gradient(135deg, #6b7280, #4b5563); margin-left: 0.5rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        th { background: #f8fafc; font-weight: 600; }
+        .actions button { margin-right: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+        .badge { padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; }
+        .badge-ativo { background: #dcfce7; color: #166534; }
+        .badge-inativo { background: #fee2e2; color: #b91c1c; }
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+        .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+        .alert-warning { background: #fff3cd; color: #b45309; border: 1px solid #facc15; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading.active { display: block; }
+        .tag-info { background: #eff6ff; border: 1px solid #3b82f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; }
+        .tag-info strong { color: #1d4ed8; }
+        /* Menu Toggle Mobile */
+        .menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: #1e293b; color: #fff; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .header { padding: 1rem; }
+            .form-section, .table-section { padding: 1rem; }
+            th, td { padding: 0.5rem; font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+            button { width: 100%; margin-bottom: 0.5rem; margin-right: 0; }
+        }
+    </style>
+    <script src="js/sessao_manager.js"></script>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <nav class="sidebar" id="sidebar">
+        <h1>Serra da Liberdade</h1>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="moradores.html" class="nav-link"><i class="fas fa-users"></i> Moradores</a></li>
+            <li class="nav-item"><a href="veiculos.html" class="nav-link"><i class="fas fa-car"></i> Veículos</a></li>
+            <li class="nav-item"><a href="visitantes.html" class="nav-link"><i class="fas fa-user-friends"></i> Visitantes</a></li>
+            <li class="nav-item"><a href="registro.html" class="nav-link"><i class="fas fa-clipboard-list"></i> Registro Manual</a></li>
+            <li class="nav-item"><a href="acesso.html" class="nav-link"><i class="fas fa-door-open"></i> Controle de Acesso</a></li>
+            <li class="nav-item"><a href="relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li class="nav-item"><a href="financeiro.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Financeiro</a></li>
+            <li class="nav-item"><a href="configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+            <li class="nav-item"><a href="manutencao.html" class="nav-link"><i class="fas fa-tools"></i> Manutenção</a></li>
+            <li class="nav-item"><a href="administrativa.html" class="nav-link"><i class="fas fa-briefcase"></i> Administrativo</a></li>
+
+<li class="nav-item" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <a href="#" class="nav-link" id="btn-logout" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5;" onclick="fazerLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <h1>Cadastro de Veículos</h1>
+        </header>
+
+        <div id="alertBox"></div>
+
+        <section class="form-section">
+            <h2 id="formTitle">Novo Veículo</h2>
+            
+            <div class="tag-info">
+                <i class="fas fa-info-circle"></i> <strong>Integração RFID:</strong> O sistema está preparado para comunicação com o leitor <strong>RFID Control iD iDUHF</strong>. Cada TAG deve ser única no sistema.
+            </div>
+
+            <form id="veiculoForm">
+                <input type="hidden" id="veiculoId">
+                <div class="form-grid">
+                    <div><label>Placa *</label><input type="text" id="placa" maxlength="8" placeholder="ABC1D23 ou ABC-1234" required></div>
+                    <div><label>Modelo *</label><input type="text" id="modelo" placeholder="Ex: Honda Civic" required></div>
+                    <div><label>Cor</label><input type="text" id="cor" placeholder="Ex: Prata"></div>
+                    <div><label>TAG RFID *</label><input type="text" id="tag" placeholder="Código da TAG" required></div>
+                    <div>
+                        <label>Morador *</label>
+                        <select id="morador" required>
+                            <option value="">Carregando...</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" id="btnSalvar">Salvar Veículo</button>
+                <button type="button" class="btn-cancel" id="btnCancelar" style="display:none;">Cancelar</button>
+            </form>
+        </section>
+
+        <section class="table-section">
+            <h2>Lista de Veículos</h2>
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Carregando...</p>
+            </div>
+            <table id="veiculosTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Placa</th>
+                        <th>Modelo</th>
+                        <th>Cor</th>
+                        <th>TAG RFID</th>
+                        <th>Morador</th>
+                        <th>Unidade</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        let editandoId = null;
+        let moradores = [];
+
+        // Carregar dados ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarMoradores();
+            carregarVeiculos();
+            aplicarMascaras();
+        });
+
+        // Aplicar máscaras
+        function aplicarMascaras() {
+            document.getElementById('placa').addEventListener('input', function(e) {
+                let valor = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (valor.length > 3 && valor.length <= 7) {
+                    valor = valor.substring(0, 3) + '-' + valor.substring(3);
+                }
+                e.target.value = valor;
+            });
+        }
+
+        // Carregar moradores
+        function carregarMoradores() {
+            fetch('../api/api_moradores.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na requisição: ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            moradores = data.dados;
+                            const select = document.getElementById('morador');
+                            
+                            if (moradores.length === 0) {
+                                select.innerHTML = '<option value="">Nenhum morador cadastrado</option>';
+                                mostrarAlerta('warning', 'Cadastre moradores antes de adicionar veículos.');
+                                document.getElementById('btnSalvar').disabled = true;
+                            } else {
+                                select.innerHTML = '<option value="">Selecione um morador...</option>';
+                                moradores.forEach(m => {
+                                    select.innerHTML += `<option value="${m.id}">${m.nome} - Unidade ${m.unidade}</option>`;
+                                });
+                            }
+                        } else {
+                            mostrarAlerta('error', data.mensagem || 'Erro ao carregar moradores');
+                        }
+                    } catch (e) {
+                        console.error('Resposta do servidor:', text);
+                        mostrarAlerta('error', 'Erro ao processar lista de moradores');
+                    }
+                })
+                .catch(error => {
+                    mostrarAlerta('error', 'Erro ao carregar moradores: ' + error.message);
+                });
+        }
+
+        // Carregar veículos
+        function carregarVeiculos() {
+            document.getElementById('loading').classList.add('active');
+            
+            fetch('../api/api_veiculos.php')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').classList.remove('active');
+                    if (data.sucesso) {
+                        renderizarTabela(data.dados);
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao carregar veículos: ' + error.message);
+                });
+        }
+
+        // Renderizar tabela
+        function renderizarTabela(veiculos) {
+            const tbody = document.querySelector('#veiculosTable tbody');
+            tbody.innerHTML = '';
+
+            if (veiculos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum veículo cadastrado</td></tr>';
+                return;
+            }
+
+            veiculos.forEach(v => {
+                const tr = document.createElement('tr');
+                const statusBadge = v.ativo == 1 
+                    ? '<span class="badge badge-ativo">Ativo</span>' 
+                    : '<span class="badge badge-inativo">Inativo</span>';
+                
+                const btnToggle = v.ativo == 1
+                    ? `<button class="btn-toggle" onclick="toggleStatus(${v.id}, 0)"><i class="fas fa-ban"></i> Inativar</button>`
+                    : `<button class="btn-toggle" onclick="toggleStatus(${v.id}, 1)"><i class="fas fa-check"></i> Ativar</button>`;
+                
+                tr.innerHTML = `
+                    <td>${v.id}</td>
+                    <td><strong>${v.placa}</strong></td>
+                    <td>${v.modelo}</td>
+                    <td>${v.cor || '-'}</td>
+                    <td><code>${v.tag}</code></td>
+                    <td>${v.morador_nome}</td>
+                    <td>${v.morador_unidade}</td>
+                    <td>${statusBadge}</td>
+                    <td class="actions">
+                        <button class="btn-edit" onclick="editarVeiculo(${v.id})"><i class="fas fa-edit"></i> Editar</button>
+                        ${btnToggle}
+                        <button class="btn-delete" onclick="excluirVeiculo(${v.id}, '${v.placa}')"><i class="fas fa-trash"></i> Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Salvar veículo
+        document.getElementById('veiculoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const dados = {
+                placa: document.getElementById('placa').value.toUpperCase().replace('-', ''),
+                modelo: document.getElementById('modelo').value,
+                cor: document.getElementById('cor').value,
+                tag: document.getElementById('tag').value,
+                morador_id: document.getElementById('morador').value,
+                ativo: 1
+            };
+
+            const metodo = editandoId ? 'PUT' : 'POST';
+            if (editandoId) {
+                dados.id = editandoId;
+            }
+
+            fetch('../api/api_veiculos.php', {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    mostrarAlerta('success', data.mensagem);
+                    limparFormulario();
+                    carregarVeiculos();
+                } else {
+                    mostrarAlerta('error', data.mensagem);
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao salvar: ' + error.message);
+            });
+        });
+
+        // Editar veículo
+        function editarVeiculo(id) {
+            fetch('../api/api_veiculos.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        const veiculo = data.dados.find(v => v.id == id);
+                        if (veiculo) {
+                            document.getElementById('veiculoId').value = veiculo.id;
+                            document.getElementById('placa').value = veiculo.placa;
+                            document.getElementById('modelo').value = veiculo.modelo;
+                            document.getElementById('cor').value = veiculo.cor || '';
+                            document.getElementById('tag').value = veiculo.tag;
+                            document.getElementById('morador').value = veiculo.morador_id;
+                            
+                            editandoId = id;
+                            document.getElementById('formTitle').textContent = 'Editar Veículo';
+                            document.getElementById('btnSalvar').textContent = 'Atualizar Veículo';
+                            document.getElementById('btnCancelar').style.display = 'inline-block';
+                            
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    }
+                });
+        }
+
+        // Toggle status
+        function toggleStatus(id, novoStatus) {
+            fetch('../api/api_veiculos.php')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        const veiculo = data.dados.find(v => v.id == id);
+                        if (veiculo) {
+                            veiculo.ativo = novoStatus;
+                            
+                            fetch('../api/api_veiculos.php', {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    id: id,
+                                    placa: veiculo.placa,
+                                    modelo: veiculo.modelo,
+                                    cor: veiculo.cor,
+                                    tag: veiculo.tag,
+                                    morador_id: veiculo.morador_id,
+                                    ativo: novoStatus
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.sucesso) {
+                                    mostrarAlerta('success', novoStatus ? 'Veículo ativado com sucesso' : 'Veículo inativado com sucesso');
+                                    carregarVeiculos();
+                                } else {
+                                    mostrarAlerta('error', data.mensagem);
+                                }
+                            });
+                        }
+                    }
+                });
+        }
+
+        // Excluir veículo
+        function excluirVeiculo(id, placa) {
+            if (!confirm(`Deseja realmente excluir o veículo "${placa}"?`)) {
+                return;
+            }
+
+            fetch('../api/api_veiculos.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    mostrarAlerta('success', data.mensagem);
+                    carregarVeiculos();
+                } else {
+                    mostrarAlerta('error', data.mensagem);
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao excluir: ' + error.message);
+            });
+        }
+
+        // Cancelar edição
+        document.getElementById('btnCancelar').addEventListener('click', limparFormulario);
+
+        // Limpar formulário
+        function limparFormulario() {
+            document.getElementById('veiculoForm').reset();
+            document.getElementById('veiculoId').value = '';
+            editandoId = null;
+            document.getElementById('formTitle').textContent = 'Novo Veículo';
+            document.getElementById('btnSalvar').textContent = 'Salvar Veículo';
+            document.getElementById('btnCancelar').style.display = 'none';
+        }
+
+        // Mostrar alerta
+        function mostrarAlerta(tipo, mensagem) {
+            const alertBox = document.getElementById('alertBox');
+            const classe = tipo === 'success' ? 'alert-success' : (tipo === 'warning' ? 'alert-warning' : 'alert-error');
+            const icone = tipo === 'success' ? 'fa-check-circle' : (tipo === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle');
+            
+            alertBox.innerHTML = `<div class="alert ${classe}"><i class="fas ${icone}"></i> ${mensagem}</div>`;
+            
+            setTimeout(() => {
+                alertBox.innerHTML = '';
+            }, 5000);
+        }
+        // Toggle menu mobile
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // Fechar menu ao clicar fora (mobile)
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+  
+    // ========== FUNÇÃO DE LOGOUT ==========
+        function fazerLogout(event) {
+            event.preventDefault();
+            
+            if (confirm('Deseja realmente sair do sistema?')) {
+                fetch('../api/logout.php', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        // Limpar sessionStorage
+                        sessionStorage.clear();
+                        
+                        // Redirecionar para login
+                        window.location.href = 'login.html';
+                    } else {
+                        alert('Erro ao fazer logout: ' + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                    // Mesmo com erro, limpar e redirecionar
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+    </script>
+    
+    <!-- Proteção de Login -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/user-display.js"></script>
+    <script src="js/user-profile-sidebar.js"></script>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Acesso - Sistema de Portaria</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 2rem 0; overflow-y: auto; }
+        .sidebar h1 { color: #fff; font-size: 1.3rem; text-align: center; margin-bottom: 2rem; }
+        .nav-menu { list-style: none; padding: 1rem; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-link i { margin-right: 0.75rem; width: 20px; }
+        .main-content { margin-left: 260px; padding: 2rem; width: 100%; }
+        .header { background: #fff; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .card { background: #fff; padding: 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); text-align: center; }
+        .card h2 { margin-bottom: 1.5rem; color: #1e293b; }
+        .input-group { max-width: 500px; margin: 0 auto 1.5rem; }
+        input { width: 100%; padding: 1rem; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 1.1rem; text-align: center; }
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        button { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; padding: 1rem 2rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1.1rem; transition: 0.2s; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .mensagem { margin-top: 2rem; padding: 1.5rem; border-radius: 12px; font-size: 1.3rem; font-weight: bold; display: none; }
+        .mensagem.sucesso { background: #dcfce7; color: #166534; border: 2px solid #22c55e; display: block; }
+        .mensagem.erro { background: #fee2e2; color: #b91c1c; border: 2px solid #f87171; display: block; }
+        .info-morador { margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px; display: none; }
+        .info-morador.show { display: block; }
+        .info-morador p { margin: 0.5rem 0; font-size: 1.1rem; }
+        .table-section { background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .table-section h2 { margin-bottom: 1rem; color: #1e293b; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        th { background: #f8fafc; font-weight: 600; }
+        .refresh-btn { float: right; padding: 0.5rem 1rem; font-size: 0.9rem; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading.active { display: block; }
+        .rfid-status { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; font-weight: 600; }
+        .rfid-online { background: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+        .rfid-offline { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+        .auto-refresh { text-align: right; margin-bottom: 1rem; }
+        .auto-refresh label { font-weight: 600; margin-right: 0.5rem; }
+        /* Menu Toggle Mobile */
+        .menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: #1e293b; color: #fff; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .header { padding: 1rem; }
+            .form-section, .table-section { padding: 1rem; }
+            th, td { padding: 0.5rem; font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+            button { width: 100%; margin-bottom: 0.5rem; margin-right: 0; }
+        }
+    </style>
+    <script src="js/sessao_manager.js"></script>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <nav class="sidebar" id="sidebar">
+        <h1>Serra da Liberdade</h1>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="moradores.html" class="nav-link"><i class="fas fa-users"></i> Moradores</a></li>
+            <li class="nav-item"><a href="veiculos.html" class="nav-link"><i class="fas fa-car"></i> Veículos</a></li>
+            <li class="nav-item"><a href="visitantes.html" class="nav-link"><i class="fas fa-user-friends"></i> Visitantes</a></li>
+            <li class="nav-item"><a href="registro.html" class="nav-link"><i class="fas fa-clipboard-list"></i> Registro Manual</a></li>
+            <li class="nav-item"><a href="acesso.html" class="nav-link"><i class="fas fa-door-open"></i> Controle de Acesso</a></li>
+            <li class="nav-item"><a href="relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li class="nav-item"><a href="financeiro.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Financeiro</a></li>
+            <li class="nav-item"><a href="configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+            <li class="nav-item"><a href="manutencao.html" class="nav-link"><i class="fas fa-tools"></i> Manutenção</a></li>
+            <li class="nav-item"><a href="administrativa.html" class="nav-link"><i class="fas fa-briefcase"></i> Administrativo</a></li>
+
+<li class="nav-item" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <a href="#" class="nav-link" id="btn-logout" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5;" onclick="fazerLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-door-open"></i> Controle de Acesso - Portaria</h1>
+        </header>
+
+        <div id="rfidStatus" class="rfid-status rfid-offline">
+            <i class="fas fa-wifi"></i> Status RFID: Aguardando verificação...
+        </div>
+
+        <section class="card">
+            <h2><i class="fas fa-id-card"></i> Verificação de Acesso</h2>
+            <p style="color: #64748b; margin-bottom: 1.5rem;">Digite a placa do veículo ou aproxime a TAG RFID</p>
+            
+            <form id="acessoForm">
+                <div class="input-group">
+                    <input type="text" id="entrada" placeholder="PLACA ou TAG RFID" required autofocus>
+                </div>
+                <button type="submit"><i class="fas fa-check-circle"></i> Verificar Acesso</button>
+            </form>
+
+            <div id="mensagem" class="mensagem"></div>
+            <div id="infoMorador" class="info-morador"></div>
+        </section>
+
+        <section class="table-section">
+            <div class="auto-refresh">
+                <label><input type="checkbox" id="autoRefresh" checked> Atualização automática (5s)</label>
+                <button class="refresh-btn" onclick="carregarUltimosAcessos()"><i class="fas fa-sync-alt"></i> Atualizar</button>
+            </div>
+            <h2><i class="fas fa-history"></i> Últimos Acessos Liberados</h2>
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p>Carregando...</p>
+            </div>
+            <table id="acessosTable">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Hora</th>
+                        <th>Placa</th>
+                        <th>Modelo</th>
+                        <th>Unidade</th>
+                        <th>Morador</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        let autoRefreshInterval = null;
+
+        // Carregar ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarUltimosAcessos();
+            verificarStatusRFID();
+            iniciarAutoRefresh();
+        });
+
+        // Auto-refresh
+        function iniciarAutoRefresh() {
+            const checkbox = document.getElementById('autoRefresh');
+            
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    autoRefreshInterval = setInterval(carregarUltimosAcessos, 5000);
+                } else {
+                    clearInterval(autoRefreshInterval);
+                }
+            });
+
+            if (checkbox.checked) {
+                autoRefreshInterval = setInterval(carregarUltimosAcessos, 5000);
+            }
+        }
+
+        // Verificar status do RFID
+        function verificarStatusRFID() {
+            fetch('../api/api_rfid.php?acao=testar_conexao')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('rfidStatus');
+                    if (data.sucesso) {
+                        statusDiv.className = 'rfid-status rfid-online';
+                        statusDiv.innerHTML = '<i class="fas fa-wifi"></i> RFID Control iD iDUHF: Online';
+                    } else {
+                        statusDiv.className = 'rfid-status rfid-offline';
+                        statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> RFID: Offline ou não configurado';
+                    }
+                })
+                .catch(error => {
+                    const statusDiv = document.getElementById('rfidStatus');
+                    statusDiv.className = 'rfid-status rfid-offline';
+                    statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> RFID: Erro na verificação';
+                });
+        }
+
+        // Verificar acesso
+        document.getElementById('acessoForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const entrada = document.getElementById('entrada').value.trim().toUpperCase();
+            const mensagemDiv = document.getElementById('mensagem');
+            const infoDiv = document.getElementById('infoMorador');
+            
+            if (!entrada) {
+                return;
+            }
+
+            // Limpar mensagens anteriores
+            mensagemDiv.className = 'mensagem';
+            mensagemDiv.innerHTML = '';
+            infoDiv.className = 'info-morador';
+            infoDiv.innerHTML = '';
+
+            // Verificar TAG via API
+            fetch('../api/api_rfid.php?acao=verificar_tag', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tag: entrada })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso && data.dados.liberado) {
+                    // Acesso liberado
+                    mensagemDiv.className = 'mensagem sucesso';
+                    mensagemDiv.innerHTML = `
+                        <i class="fas fa-check-circle"></i><br>
+                        ${data.dados.mensagem}
+                    `;
+                    
+                    infoDiv.className = 'info-morador show';
+                    infoDiv.innerHTML = `
+                        <p><strong>Placa:</strong> ${data.dados.placa}</p>
+                        <p><strong>Modelo:</strong> ${data.dados.modelo}</p>
+                        <p><strong>Unidade:</strong> ${data.dados.unidade}</p>
+                    `;
+
+                    // Tocar som de sucesso (opcional)
+                    // new Audio('success.mp3').play();
+
+                    // Atualizar lista de acessos
+                    setTimeout(() => {
+                        carregarUltimosAcessos();
+                    }, 1000);
+
+                } else {
+                    // Acesso negado
+                    mensagemDiv.className = 'mensagem erro';
+                    mensagemDiv.innerHTML = `
+                        <i class="fas fa-times-circle"></i><br>
+                        ${data.dados ? data.dados.mensagem : data.mensagem}
+                    `;
+
+                    // Tocar som de erro (opcional)
+                    // new Audio('error.mp3').play();
+                }
+
+                // Limpar campo após 3 segundos
+                setTimeout(() => {
+                    document.getElementById('entrada').value = '';
+                    document.getElementById('entrada').focus();
+                }, 3000);
+            })
+            .catch(error => {
+                mensagemDiv.className = 'mensagem erro';
+                mensagemDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i><br>
+                    ERRO DE COMUNICAÇÃO
+                `;
+                console.error('Erro:', error);
+            });
+        });
+
+        // Carregar últimos acessos
+        function carregarUltimosAcessos() {
+            fetch('../api/api_rfid.php?acao=ultimos_acessos&limite=20')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        renderizarTabela(data.dados);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar acessos:', error);
+                });
+        }
+
+        // Renderizar tabela
+        function renderizarTabela(acessos) {
+            const tbody = document.querySelector('#acessosTable tbody');
+            tbody.innerHTML = '';
+
+            if (acessos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum acesso registrado</td></tr>';
+                return;
+            }
+
+            acessos.forEach(a => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${a.data}</td>
+                    <td><strong>${a.hora}</strong></td>
+                    <td><strong>${a.placa}</strong></td>
+                    <td>${a.modelo || '-'}</td>
+                    <td>${a.unidade}</td>
+                    <td>${a.morador}</td>
+                    <td>${a.status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Focar no campo de entrada automaticamente
+        setInterval(() => {
+            if (document.activeElement !== document.getElementById('entrada')) {
+                document.getElementById('entrada').focus();
+            }
+        }, 2000);
+        // Toggle menu mobile
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // Fechar menu ao clicar fora (mobile)
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !toggle.contains(e.target)) {
+                sidebar.classList.remove('active');
+            }
+        });
+  
+    // ========== FUNÇÃO DE LOGOUT ==========
+        function fazerLogout(event) {
+            event.preventDefault();
+            
+            if (confirm('Deseja realmente sair do sistema?')) {
+                fetch('../api/logout.php', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        // Limpar sessionStorage
+                        sessionStorage.clear();
+                        
+                        // Redirecionar para login
+                        window.location.href = 'login.html';
+                    } else {
+                        alert('Erro ao fazer logout: ' + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                    // Mesmo com erro, limpar e redirecionar
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+    </script>
+    
+    <!-- Proteção de Login -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/user-display.js"></script>
+    <script src="js/user-profile-sidebar.js"></script>
+</body>
+</html>
+
+   
+

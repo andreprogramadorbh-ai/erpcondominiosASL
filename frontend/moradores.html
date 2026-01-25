@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Moradores - Sistema de Controle de Acesso</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; display: flex; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 2rem 0; overflow-y: auto; }
+        .sidebar h1 { color: #fff; font-size: 1.3rem; text-align: center; margin-bottom: 2rem; }
+        .nav-menu { list-style: none; padding: 1rem; }
+        .nav-item { margin-bottom: 0.5rem; }
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; color: #cbd5e1; text-decoration: none; border-radius: 8px; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+        .nav-link i { margin-right: 0.75rem; width: 20px; }
+        .main-content { margin-left: 260px; padding: 2rem; width: 100%; }
+        .header { background: #fff; padding: 1.5rem 2rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-section, .table-section { background: #fff; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        input, select, textarea { width: 100%; padding: 0.6rem; margin-bottom: 0.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        button { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; padding: 0.6rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; margin-right: 0.5rem; }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
+        .btn-edit { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .btn-delete { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .btn-toggle { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .btn-cancel { background: linear-gradient(135deg, #6b7280, #4b5563); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        th { background: #f8fafc; font-weight: 600; }
+        .actions button { margin-right: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.9rem; }
+        .whatsapp-link { color: #25d366; margin-left: 0.5rem; font-size: 1.2rem; text-decoration: none; }
+        /* Badges */
+        .badge { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; font-weight: 500; display: inline-block; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-primary { background: #dbeafe; color: #1e40af; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #22c55e; }
+        .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+        .loading { display: none; text-align: center; padding: 2rem; }
+        .loading.active { display: block; }
+        
+        /* Sistema de Busca */
+        .search-section { background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; }
+        .search-section h3 { margin-bottom: 1rem; color: #1e293b; font-size: 1.1rem; }
+        .search-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        .search-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        
+        /* Menu Toggle Mobile */
+        .menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: #1e293b; color: #fff; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; }
+        
+        /* Abas */
+        .tabs-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+        
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #64748b;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .tab-button:hover {
+            color: #1e293b;
+            border-bottom-color: #cbd5e1;
+        }
+        
+        .tab-button.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        #tabelaDependentes tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        #tabelaDependentes .actions {
+            white-space: nowrap;
+        }
+        
+        #tabelaDependentes .actions button {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+            margin-right: 0.25rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; }
+            .header { padding: 1rem; }
+            .form-section, .table-section { padding: 1rem; }
+            .search-section { padding: 1rem; }
+            .search-grid { grid-template-columns: 1fr; }
+            .search-buttons { flex-direction: column; }
+            .search-buttons button { width: 100%; }
+            th, td { padding: 0.5rem; font-size: 0.85rem; }
+        }
+        
+        @media (max-width: 480px) {
+            .form-grid { grid-template-columns: 1fr; }
+            button { width: 100%; margin-bottom: 0.5rem; margin-right: 0; }
+        }
+        
+        /* Paginação */
+        .pagination-container {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .pagination-info {
+            color: #64748b;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .pagination-pages {
+            padding: 0.5rem 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .btn-pagination {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .btn-pagination:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .btn-pagination:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-pagination i {
+            font-size: 0.85rem;
+        }
+        @media (max-width: 768px) {
+            .pagination-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            .pagination-controls {
+                width: 100%;
+                justify-content: center;
+            }
+            .btn-pagination {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="menu-toggle" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <nav class="sidebar" id="sidebar">
+        <h1>Serra da Liberdade</h1>
+        <ul class="nav-menu">
+            <li class="nav-item"><a href="dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="moradores.html" class="nav-link"><i class="fas fa-users"></i> Moradores</a></li>
+            <li class="nav-item"><a href="veiculos.html" class="nav-link"><i class="fas fa-car"></i> Veículos</a></li>
+            <li class="nav-item"><a href="visitantes.html" class="nav-link"><i class="fas fa-user-friends"></i> Visitantes</a></li>
+            <li class="nav-item"><a href="registro.html" class="nav-link"><i class="fas fa-clipboard-list"></i> Registro Manual</a></li>
+            <li class="nav-item"><a href="acesso.html" class="nav-link"><i class="fas fa-door-open"></i> Controle de Acesso</a></li>
+            <li class="nav-item"><a href="relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+            <li class="nav-item"><a href="financeiro.html" class="nav-link"><i class="fas fa-money-bill-wave"></i> Financeiro</a></li>
+            <li class="nav-item"><a href="configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+            <li class="nav-item"><a href="manutencao.html" class="nav-link"><i class="fas fa-tools"></i> Manutenção</a></li>
+            <li class="nav-item"><a href="administrativa.html" class="nav-link"><i class="fas fa-briefcase"></i> Administrativo</a></li>
+
+           <li class="nav-item" style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <a href="#" class="nav-link" id="btn-logout" style="background: rgba(239, 68, 68, 0.1); color: #fca5a5;" onclick="fazerLogout(event)">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="header">
+            <h1><i class="fas fa-users"></i> Cadastro de Moradores</h1>
+        </header>
+
+        <div id="alertBox"></div>
+
+        <!-- SEÇÃO DE DADOS PESSOAIS DO MORADOR -->
+        <div id="secaoDadosMorador" style="display: none;">
+            <section class="form-section">
+                <h2 id="formTitle">Novo Morador</h2>
+                <form id="moradorForm">
+                    <input type="hidden" id="moradorId">
+                    <div class="form-grid">
+                        <div><label>Nome Completo *</label><input type="text" id="nome" required></div>
+                        <div><label>CPF *</label><input type="text" id="cpf" maxlength="14" required></div>
+                        <div><label>Unidade *</label><select id="unidade" required><option value="">Carregando...</option></select></div>
+                        <div><label>Email *</label><input type="email" id="email" required></div>
+                    </div>
+                    <div class="form-grid">
+                        <div><label>Senha *</label><input type="password" id="senha" required></div>
+                        <div><label>Confirmar Senha *</label><input type="password" id="confirmaSenha" required></div>
+                        <div><label>Telefone Fixo</label><input type="text" id="telefone" maxlength="15"></div>
+                        <div><label>Celular</label><input type="text" id="celular" maxlength="15"></div>
+                    </div>
+                    <button type="submit" id="btnSalvar"><i class="fas fa-save"></i> Salvar Morador</button>
+                    <button type="button" class="btn-cancel" id="btnCancelar" style="display:none;"><i class="fas fa-times"></i> Cancelar</button>
+                </form>
+            </section>
+
+            <section class="table-section">
+                <h2>Lista de Moradores</h2>
+                
+                <!-- Sistema de Busca -->
+                <div class="search-section">
+                    <h3><i class="fas fa-search"></i> Pesquisar Moradores</h3>
+                    <div class="search-grid">
+                        <div>
+                            <label>Unidade</label>
+                            <select id="filtroUnidade">
+                                <option value="">Todas as unidades</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Nome</label>
+                            <input type="text" id="filtroNome" placeholder="Digite o nome...">
+                        </div>
+                        <div>
+                            <label>Email</label>
+                            <input type="email" id="filtroEmail" placeholder="Digite o email...">
+                        </div>
+                        <div>
+                            <label>CPF</label>
+                            <input type="text" id="filtroCpf" placeholder="000.000.000-00" maxlength="14">
+                        </div>
+                    </div>
+                    <div class="search-buttons">
+                        <button onclick="buscarMoradores()"><i class="fas fa-search"></i> Buscar</button>
+                        <button class="btn-cancel" onclick="limparBusca()"><i class="fas fa-eraser"></i> Limpar Filtros</button>
+                    </div>
+                </div>
+                
+                <div class="loading" id="loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p>Carregando...</p>
+                </div>
+                
+
+                <table id="moradoresTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Unidade</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Celular</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                
+                <!-- Paginação Inferior -->
+                <div id="paginacaoInferior" class="pagination-container" style="display:none;">
+                    <div class="pagination-info">
+                        <span id="infoInferior">Mostrando 0 de 0 moradores</span>
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="btnPrimeiroInferior" class="btn-pagination" onclick="irParaPagina(1)">
+                            <i class="fas fa-angle-double-left"></i> Primeira
+                        </button>
+                        <button id="btnAnteriorInferior" class="btn-pagination" onclick="paginaAnterior()">
+                            <i class="fas fa-angle-left"></i> Anterior
+                        </button>
+                        <span class="pagination-pages" id="paginasInferior">Página 1 de 1</span>
+                        <button id="btnProximoInferior" class="btn-pagination" onclick="proximaPagina()">
+                            Próximo <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button id="btnUltimoInferior" class="btn-pagination" onclick="irParaUltimaPagina()">
+                            Última <i class="fas fa-angle-double-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- SEÇÃO DE DEPENDENTES DO MORADOR -->
+        <div id="secaoDependentes" style="display: none;">
+            <div id="alertBoxDependentes"></div>
+
+            <!-- Abas -->
+            <div class="tabs-container">
+                <button class="tab-button active" onclick="abrirAba(event, 'dados-morador')">
+                    <i class="fas fa-user"></i> Dados Pessoais
+                </button>
+                <button class="tab-button" onclick="abrirAba(event, 'dependentes')">
+                    <i class="fas fa-users"></i> Dependentes
+                </button>
+            </div>
+
+            <!-- Aba: Dados Pessoais -->
+            <div id="dados-morador" class="tab-content active">
+                <section class="table-section">
+                    <h2>Informações do Morador</h2>
+                    <table style="width: 100%;">
+                        <tr>
+                            <td><strong>Nome:</strong> <span id="morador-nome"></span></td>
+                            <td><strong>CPF:</strong> <span id="morador-cpf"></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email:</strong> <span id="morador-email"></span></td>
+                            <td><strong>Unidade:</strong> <span id="morador-unidade"></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telefone:</strong> <span id="morador-telefone"></span></td>
+                            <td><strong>Celular:</strong> <span id="morador-celular"></span></td>
+                        </tr>
+                    </table>
+                    <button type="button" class="btn-cancel" onclick="voltarParaLista()" style="margin-top: 1rem;">
+                        <i class="fas fa-arrow-left"></i> Voltar para Lista
+                    </button>
+                </section>
+            </div>
+
+            <!-- Aba: Dependentes -->
+            <div id="dependentes" class="tab-content">
+                <section class="form-section">
+                    <h2 id="formTitleDependente">Novo Dependente</h2>
+                    
+                    <form id="dependenteForm">
+                        <input type="hidden" id="dependenteId">
+                        
+                        <div class="form-grid">
+                            <div>
+                                <label>Nome Completo *</label>
+                                <input type="text" id="nomeCompleto" placeholder="Digite o nome completo" required>
+                            </div>
+                            <div>
+                                <label>CPF *</label>
+                                <input type="text" id="cpf" maxlength="14" placeholder="000.000.000-00" 
+                                       oninput="formatarInputCPF(this)" required>
+                            </div>
+                            <div>
+                                <label>Parentesco *</label>
+                                <select id="parentesco" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Cônjuge">Cônjuge</option>
+                                    <option value="Filho(a)">Filho(a)</option>
+                                    <option value="Enteado(a)">Enteado(a)</option>
+                                    <option value="Pai/Mãe">Pai/Mãe</option>
+                                    <option value="Irmão/Irmã">Irmão/Irmã</option>
+                                    <option value="Avô/Avó">Avô/Avó</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div>
+                                <label>Email</label>
+                                <input type="email" id="email" placeholder="email@example.com">
+                            </div>
+                            <div>
+                                <label>Telefone</label>
+                                <input type="text" id="telefone" maxlength="15" placeholder="(31) 3333-3333">
+                            </div>
+                            <div>
+                                <label>Celular</label>
+                                <input type="text" id="celular" maxlength="15" placeholder="(31) 98888-8888">
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div>
+                                <label>Data de Nascimento</label>
+                                <input type="date" id="dataNascimento">
+                            </div>
+                            <div>
+                                <label>Observações</label>
+                                <textarea id="observacao" placeholder="Observações adicionais" style="resize: vertical; min-height: 80px;"></textarea>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" id="btnSalvarDependente">
+                            <i class="fas fa-save"></i> Salvar Dependente
+                        </button>
+                        <button type="button" class="btn-cancel" id="btnCancelarDependente" 
+                                onclick="limparFormularioDependente()" style="display:none;">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </form>
+                </section>
+                
+                <!-- Tabela de Dependentes -->
+                <section class="table-section">
+                    <h2>Lista de Dependentes</h2>
+                    
+                    <div class="loading" id="loadingDependentes">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p>Carregando dependentes...</p>
+                    </div>
+                    
+                    <table id="tabelaDependentes">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Parentesco</th>
+                                <th>Celular</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let editandoId = null;
+        let moradorIdAtual = null;
+        let todosOsMoradores = [];
+        let moradoresFiltrados = [];
+        let paginaAtual = 1;
+        const registrosPorPagina = 20;
+
+        // Carregar moradores ao iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarMoradores();
+            carregarUnidades();
+            carregarUnidadesFiltro();
+            aplicarMascaras();
+            configurarEnterBusca();
+            mostrarSecaoDados();
+        });
+
+        // Mostrar seção de dados (lista de moradores)
+        function mostrarSecaoDados() {
+            document.getElementById('secaoDadosMorador').style.display = 'block';
+            document.getElementById('secaoDependentes').style.display = 'none';
+        }
+
+        // Mostrar seção de dependentes
+        function mostrarSecaoDependentes(moradorId) {
+            moradorIdAtual = moradorId;
+            document.getElementById('secaoDadosMorador').style.display = 'none';
+            document.getElementById('secaoDependentes').style.display = 'block';
+            carregarDadosMoradorParaExibicao(moradorId);
+            inicializarDependentes(moradorId);
+        }
+
+        // Voltar para lista de moradores
+        function voltarParaLista() {
+            mostrarSecaoDados();
+            moradorIdAtual = null;
+        }
+
+        // Carregar dados do morador para exibição
+        function carregarDadosMoradorParaExibicao(moradorId) {
+            const morador = todosOsMoradores.find(m => m.id == moradorId);
+            if (morador) {
+                document.getElementById('morador-nome').textContent = morador.nome;
+                document.getElementById('morador-cpf').textContent = morador.cpf;
+                document.getElementById('morador-email').textContent = morador.email;
+                document.getElementById('morador-unidade').textContent = morador.unidade;
+                document.getElementById('morador-telefone').textContent = morador.telefone || '-';
+                document.getElementById('morador-celular').textContent = morador.celular || '-';
+            }
+        }
+
+        // Abrir aba
+        function abrirAba(event, abaNome) {
+            event.preventDefault();
+            
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.closest('.tab-button').classList.add('active');
+            document.getElementById(abaNome).classList.add('active');
+        }
+
+        // Configurar busca ao pressionar Enter
+        function configurarEnterBusca() {
+            ['filtroNome', 'filtroEmail', 'filtroCpf'].forEach(id => {
+                document.getElementById(id).addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        buscarMoradores();
+                    }
+                });
+            });
+        }
+
+        // Aplicar máscaras nos campos
+        function aplicarMascaras() {
+            document.getElementById('cpf').addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, '');
+                if (valor.length <= 11) {
+                    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+                    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+                    valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                }
+                e.target.value = valor;
+            });
+
+            document.getElementById('filtroCpf').addEventListener('input', function(e) {
+                let valor = e.target.value.replace(/\D/g, '');
+                if (valor.length <= 11) {
+                    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+                    valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+                    valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                }
+                e.target.value = valor;
+            });
+
+            ['telefone', 'celular'].forEach(campo => {
+                document.getElementById(campo).addEventListener('input', function(e) {
+                    let valor = e.target.value.replace(/\D/g, '');
+                    if (valor.length <= 11) {
+                        valor = valor.replace(/^(\d{2})(\d)/g, '($1) $2');
+                        valor = valor.replace(/(\d)(\d{4})$/, '$1-$2');
+                    }
+                    e.target.value = valor;
+                });
+            });
+        }
+
+        // Carregar unidades do banco
+        function carregarUnidades() {
+            fetch('../api/api_unidades.php?ativas=1')
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            const select = document.getElementById('unidade');
+                            select.innerHTML = '<option value="">Selecione uma unidade...</option>';
+                            
+                            const unidadesOrdenadas = data.dados.sort((a, b) => {
+                                const numA = parseInt(a.nome.replace(/\D/g, '')) || 0;
+                                const numB = parseInt(b.nome.replace(/\D/g, '')) || 0;
+                                return numA - numB;
+                            });
+                            
+                            unidadesOrdenadas.forEach(u => {
+                                select.innerHTML += `<option value="${u.nome}">${u.nome}${u.bloco ? ' - ' + u.bloco : ''}</option>`;
+                            });
+                        } else {
+                            document.getElementById('unidade').innerHTML = '<option value="">Erro ao carregar unidades</option>';
+                        }
+                    } catch (e) {
+                        console.error('Erro ao processar unidades:', text);
+                        document.getElementById('unidade').innerHTML = '<option value="">Erro ao carregar</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar unidades:', error);
+                    document.getElementById('unidade').innerHTML = '<option value="">Erro ao carregar</option>';
+                });
+        }
+
+        // Carregar unidades para o filtro
+        function carregarUnidadesFiltro() {
+            fetch('../api/api_unidades.php?ativas=1')
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.sucesso) {
+                            const select = document.getElementById('filtroUnidade');
+                            select.innerHTML = '<option value="">Todas as unidades</option>';
+                            
+                            const unidadesOrdenadas = data.dados.sort((a, b) => {
+                                const numA = parseInt(a.nome.replace(/\D/g, '')) || 0;
+                                const numB = parseInt(b.nome.replace(/\D/g, '')) || 0;
+                                return numA - numB;
+                            });
+                            
+                            unidadesOrdenadas.forEach(u => {
+                                select.innerHTML += `<option value="${u.nome}">${u.nome}${u.bloco ? ' - ' + u.bloco : ''}</option>`;
+                            });
+                        }
+                    } catch (e) {
+                        console.error('Erro ao processar unidades do filtro:', text);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar unidades do filtro:', error);
+                });
+        }
+
+        // Buscar moradores com filtros
+        function buscarMoradores() {
+            document.getElementById('loading').classList.add('active');
+            
+            const params = new URLSearchParams();
+            const unidade = document.getElementById('filtroUnidade').value;
+            const nome = document.getElementById('filtroNome').value;
+            const email = document.getElementById('filtroEmail').value;
+            const cpf = document.getElementById('filtroCpf').value;
+            
+            if (unidade) params.append('unidade', unidade);
+            if (nome) params.append('nome', nome);
+            if (email) params.append('email', email);
+            if (cpf) params.append('cpf', cpf);
+            
+            const url = '../api/api_moradores.php' + (params.toString() ? '?' + params.toString() : '');
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').classList.remove('active');
+                    if (data.sucesso) {
+                        moradoresFiltrados = data.dados;
+                        ordenarPorUnidade(moradoresFiltrados);
+                        paginaAtual = 1;
+                        renderizarTabelaPaginada();
+                        if (data.dados.length === 0) {
+                            mostrarAlerta('error', 'Nenhum morador encontrado com os filtros aplicados.');
+                        }
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao buscar moradores: ' + error.message);
+                });
+        }
+
+        // Limpar busca
+        function limparBusca() {
+            document.getElementById('filtroUnidade').value = '';
+            document.getElementById('filtroNome').value = '';
+            document.getElementById('filtroEmail').value = '';
+            document.getElementById('filtroCpf').value = '';
+            carregarMoradores();
+        }
+
+        // Carregar moradores do banco
+        function carregarMoradores() {
+            document.getElementById('loading').classList.add('active');
+            
+            fetch('../api/api_moradores.php')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').classList.remove('active');
+                    if (data.sucesso) {
+                        todosOsMoradores = data.dados;
+                        ordenarPorUnidade(todosOsMoradores);
+                        moradoresFiltrados = [...todosOsMoradores];
+                        paginaAtual = 1;
+                        renderizarTabelaPaginada();
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').classList.remove('active');
+                    mostrarAlerta('error', 'Erro ao carregar moradores: ' + error.message);
+                });
+        }
+        
+        // Ordenar moradores por unidade (crescente)
+        function ordenarPorUnidade(moradores) {
+            moradores.sort((a, b) => {
+                const numA = parseInt(a.unidade.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.unidade.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            });
+        }
+
+        // Renderizar tabela com paginação
+        function renderizarTabelaPaginada() {
+            const totalRegistros = moradoresFiltrados.length;
+            const totalPaginas = Math.ceil(totalRegistros / registrosPorPagina);
+            
+            if (paginaAtual > totalPaginas && totalPaginas > 0) {
+                paginaAtual = totalPaginas;
+            }
+            if (paginaAtual < 1) {
+                paginaAtual = 1;
+            }
+            
+            const inicio = (paginaAtual - 1) * registrosPorPagina;
+            const fim = inicio + registrosPorPagina;
+            const moradoresPagina = moradoresFiltrados.slice(inicio, fim);
+            
+            renderizarTabela(moradoresPagina);
+            atualizarControlesPaginacao(totalRegistros, totalPaginas);
+        }
+        
+        // Atualizar controles de paginação
+        function atualizarControlesPaginacao(totalRegistros, totalPaginas) {
+            const inicio = (paginaAtual - 1) * registrosPorPagina + 1;
+            const fim = Math.min(paginaAtual * registrosPorPagina, totalRegistros);
+            
+            const textoInfo = totalRegistros > 0 
+                ? `Mostrando ${inicio} a ${fim} de ${totalRegistros} moradores`
+                : 'Nenhum morador encontrado';
+            
+            document.getElementById('infoInferior').textContent = textoInfo;
+            
+            const textoPaginas = `Página ${paginaAtual} de ${totalPaginas || 1}`;
+            document.getElementById('paginasInferior').textContent = textoPaginas;
+            
+            const btnsPrimeiro = document.querySelectorAll('#btnPrimeiroInferior');
+            const btnsAnterior = document.querySelectorAll('#btnAnteriorInferior');
+            const btnsProximo = document.querySelectorAll('#btnProximoInferior');
+            const btnsUltimo = document.querySelectorAll('#btnUltimoInferior');
+            
+            btnsPrimeiro.forEach(btn => btn.disabled = paginaAtual === 1);
+            btnsAnterior.forEach(btn => btn.disabled = paginaAtual === 1);
+            btnsProximo.forEach(btn => btn.disabled = paginaAtual === totalPaginas || totalPaginas === 0);
+            btnsUltimo.forEach(btn => btn.disabled = paginaAtual === totalPaginas || totalPaginas === 0);
+            
+            const mostrarPaginacao = totalRegistros > 0;
+            document.getElementById('paginacaoInferior').style.display = mostrarPaginacao ? 'flex' : 'none';
+        }
+        
+        // Funções de navegação
+        function proximaPagina() {
+            const totalPaginas = Math.ceil(moradoresFiltrados.length / registrosPorPagina);
+            if (paginaAtual < totalPaginas) {
+                paginaAtual++;
+                renderizarTabelaPaginada();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        function paginaAnterior() {
+            if (paginaAtual > 1) {
+                paginaAtual--;
+                renderizarTabelaPaginada();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        function irParaPagina(pagina) {
+            const totalPaginas = Math.ceil(moradoresFiltrados.length / registrosPorPagina);
+            if (pagina >= 1 && pagina <= totalPaginas) {
+                paginaAtual = pagina;
+                renderizarTabelaPaginada();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        function irParaUltimaPagina() {
+            const totalPaginas = Math.ceil(moradoresFiltrados.length / registrosPorPagina);
+            if (totalPaginas > 0) {
+                paginaAtual = totalPaginas;
+                renderizarTabelaPaginada();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        // Renderizar tabela
+        function renderizarTabela(moradores) {
+            const tbody = document.querySelector('#moradoresTable tbody');
+            tbody.innerHTML = '';
+
+            if (moradores.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Nenhum morador cadastrado</td></tr>';
+                return;
+            }
+
+            moradores.forEach(m => {
+                const tr = document.createElement('tr');
+                const whatsapp = m.celular ? `<a class='whatsapp-link' href='https://wa.me/55${m.celular.replace(/\D/g, "")}' target='_blank' title='WhatsApp'><i class='fab fa-whatsapp'></i></a>` : '';
+                
+                tr.innerHTML = `
+                    <td>${m.id}</td>
+                    <td>${m.nome}</td>
+                    <td>${m.cpf}</td>
+                    <td>${m.unidade}</td>
+                    <td>${m.email}</td>
+                    <td>${m.telefone || '-'}</td>
+                    <td>${m.celular || '-'} ${whatsapp}</td>
+                    <td><span class="badge badge-${m.ativo == 1 ? 'success' : 'danger'}">${m.ativo == 1 ? 'Ativo' : 'Inativo'}</span></td>
+                    <td class="actions">
+                        <button class="btn-edit" onclick="abrirDetalhesMoreador(${m.id})"><i class="fas fa-edit"></i> Dependentes</button>
+                        <button class="btn-delete" onclick="excluirMorador(${m.id}, '${m.nome}')"><i class="fas fa-trash"></i> Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Abrir detalhes do morador (dependentes)
+        function abrirDetalhesMoreador(moradorId) {
+            mostrarSecaoDependentes(moradorId);
+        }
+
+        // Salvar morador
+        document.getElementById('moradorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const senha = document.getElementById('senha').value;
+            const confirmaSenha = document.getElementById('confirmaSenha').value;
+
+            if (senha !== confirmaSenha) {
+                mostrarAlerta('error', 'As senhas não conferem!');
+                return;
+            }
+
+            const dados = {
+                nome: document.getElementById('nome').value,
+                cpf: document.getElementById('cpf').value,
+                unidade: document.getElementById('unidade').value,
+                email: document.getElementById('email').value,
+                senha: senha,
+                telefone: document.getElementById('telefone').value,
+                celular: document.getElementById('celular').value
+            };
+
+            const metodo = editandoId ? 'PUT' : 'POST';
+            if (editandoId) {
+                dados.id = editandoId;
+                if (senha === '********') {
+                    delete dados.senha;
+                }
+            }
+
+            fetch('../api/api_moradores.php', {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro na requisição: ' + response.status);
+                }
+                return response.text();
+            })
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.sucesso) {
+                        mostrarAlerta('success', data.mensagem);
+                        limparFormulario();
+                        carregarMoradores();
+                    } else {
+                        mostrarAlerta('error', data.mensagem);
+                    }
+                } catch (e) {
+                    console.error('Resposta do servidor:', text);
+                    mostrarAlerta('error', 'Erro ao processar resposta do servidor. Verifique se o cadastro foi realizado.');
+                    carregarMoradores();
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao salvar: ' + error.message);
+            });
+        });
+
+        // Excluir morador
+        function excluirMorador(id, nome) {
+            if (!confirm(`Deseja realmente excluir o morador "${nome}"?\n\nATENÇÃO: Todos os veículos vinculados também serão excluídos!`)) {
+                return;
+            }
+
+            fetch('../api/api_moradores.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    mostrarAlerta('success', data.mensagem);
+                    carregarMoradores();
+                } else {
+                    mostrarAlerta('error', data.mensagem);
+                }
+            })
+            .catch(error => {
+                mostrarAlerta('error', 'Erro ao excluir: ' + error.message);
+            });
+        }
+
+        // Cancelar edição
+        document.getElementById('btnCancelar').addEventListener('click', limparFormulario);
+
+        // Limpar formulário
+        function limparFormulario() {
+            document.getElementById('moradorForm').reset();
+            document.getElementById('moradorId').value = '';
+            document.getElementById('senha').setAttribute('required', 'required');
+            document.getElementById('confirmaSenha').setAttribute('required', 'required');
+            editandoId = null;
+            document.getElementById('formTitle').textContent = 'Novo Morador';
+            document.getElementById('btnSalvar').innerHTML = '<i class="fas fa-save"></i> Salvar Morador';
+            document.getElementById('btnCancelar').style.display = 'none';
+        }
+
+        // Mostrar alerta
+        function mostrarAlerta(tipo, mensagem) {
+            const alertBox = document.getElementById('alertBox');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${tipo}`;
+            alert.innerHTML = `<i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${mensagem}`;
+            
+            alertBox.innerHTML = '';
+            alertBox.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // ========== FUNÇÃO DE LOGOUT ==========
+        function fazerLogout(event) {
+            event.preventDefault();
+            
+            if (confirm('Deseja realmente sair do sistema?')) {
+                fetch('../api/logout.php', {
+                    method: 'POST',
+                    credentials: 'include'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.sucesso) {
+                        sessionStorage.clear();
+                        window.location.href = 'login.html';
+                    } else {
+                        alert('Erro ao fazer logout: ' + data.mensagem);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao fazer logout:', error);
+                    sessionStorage.clear();
+                    window.location.href = 'login.html';
+                });
+            }
+        }
+
+        // ========== TOGGLE MENU MOBILE ==========
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+    </script>
+    
+    <!-- Incluir arquivo JavaScript de dependentes -->
+    <script src="js/dependentes.js"></script>
+    
+    <!-- Proteção de Login -->
+    <script src="js/auth-guard.js"></script>
+    <script src="js/user-display.js"></script>
+    <script src="js/user-profile-sidebar.js"></script>
+</body>
+</html>
