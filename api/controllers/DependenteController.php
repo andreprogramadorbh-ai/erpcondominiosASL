@@ -111,6 +111,30 @@ class DependenteController {
      */
     public function criar($dados) {
         try {
+            // ====================================================
+            // MAPEAMENTO: camelCase → snake_case
+            // ====================================================
+            // Frontend envia em camelCase, Backend espera snake_case
+            $mapeamento = [
+                'moradorId' => 'morador_id',
+                'nomeCompleto' => 'nome_completo',
+                'dataNascimento' => 'data_nascimento'
+            ];
+            
+            foreach ($mapeamento as $camel => $snake) {
+                if (isset($dados[$camel]) && !isset($dados[$snake])) {
+                    $dados[$snake] = $dados[$camel];
+                    unset($dados[$camel]);
+                }
+            }
+            
+            // ====================================================
+            // LIMPEZA DE CPF: Remover máscara (pontos e traços)
+            // ====================================================
+            if (isset($dados['cpf'])) {
+                $dados['cpf'] = preg_replace('/[^0-9]/', '', $dados['cpf']);
+            }
+            
             // Validações
             if (empty($dados['morador_id'])) {
                 return [
@@ -174,6 +198,29 @@ class DependenteController {
                     'sucesso' => false,
                     'mensagem' => 'ID do dependente inválido'
                 ];
+            }
+            
+            // ====================================================
+            // MAPEAMENTO: camelCase → snake_case
+            // ====================================================
+            $mapeamento = [
+                'moradorId' => 'morador_id',
+                'nomeCompleto' => 'nome_completo',
+                'dataNascimento' => 'data_nascimento'
+            ];
+            
+            foreach ($mapeamento as $camel => $snake) {
+                if (isset($dados[$camel]) && !isset($dados[$snake])) {
+                    $dados[$snake] = $dados[$camel];
+                    unset($dados[$camel]);
+                }
+            }
+            
+            // ====================================================
+            // LIMPEZA DE CPF: Remover máscara
+            // ====================================================
+            if (isset($dados['cpf'])) {
+                $dados['cpf'] = preg_replace('/[^0-9]/', '', $dados['cpf']);
             }
             
             // Validar CPF se foi alterado
