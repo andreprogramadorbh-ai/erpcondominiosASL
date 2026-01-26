@@ -309,13 +309,15 @@ function salvarDependente(event) {
         
         console.log('[DEPENDENTES] Dados preparados:', dados);
         
-        // Determinar ação
-        const acao = dependenteEmEdicao ? 'atualizar' : 'criar';
-        const url = dependenteEmEdicao 
-            ? `../api/api_dependentes.php?acao=${acao}&id=${dependenteEmEdicao}`
-            : `../api/api_dependentes.php?acao=${acao}`;
+        // Determinar ação (API usa apenas métodos HTTP, não precisa de ?acao=)
+        const url = '../api/api_dependentes.php';
         
         const metodo = dependenteEmEdicao ? 'PUT' : 'POST';
+        
+        // Adicionar ID na URL para PUT
+        if (dependenteEmEdicao) {
+            dados.id = dependenteEmEdicao;
+        }
         
         console.log('[DEPENDENTES] Enviando requisição - Método:', metodo, '- URL:', url);
         
