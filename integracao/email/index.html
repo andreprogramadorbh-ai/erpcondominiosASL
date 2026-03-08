@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integração de E-mail | ERP InLaudo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            position: fixed; top: 0; left: 0;
+            width: 260px; height: 100vh;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 2rem 0; overflow-y: auto; z-index: 1000;
+            transition: transform 0.3s;
+        }
+        .sidebar h1 {
+            color: #fff; font-size: 1.2rem; text-align: center;
+            margin-bottom: 0.5rem; padding: 0 1rem;
+        }
+        .sidebar .brand-sub {
+            color: #94a3b8; font-size: 0.75rem; text-align: center;
+            margin-bottom: 2rem; padding: 0 1rem;
+        }
+        .nav-menu { list-style: none; padding: 0 1rem; }
+        .nav-item { margin-bottom: 0.25rem; }
+        .nav-link {
+            display: flex; align-items: center; padding: 0.75rem 1rem;
+            color: #cbd5e1; text-decoration: none; border-radius: 8px;
+            transition: all 0.2s; gap: 0.75rem;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255,255,255,0.1); color: #fff;
+        }
+        .nav-link i { width: 20px; text-align: center; }
+
+        /* ── Main ── */
+        .main-content {
+            margin-left: 260px; padding: 2rem;
+            min-height: 100vh; transition: margin-left 0.3s;
+        }
+
+        /* ── Header ── */
+        .page-header {
+            background: #fff; padding: 1.5rem 2rem;
+            border-radius: 12px; margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .page-header .icon-wrap {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            border-radius: 12px; display: flex;
+            align-items: center; justify-content: center;
+            color: #fff; font-size: 1.3rem; flex-shrink: 0;
+        }
+        .page-header h1 { font-size: 1.4rem; color: #1e293b; }
+        .page-header p  { color: #64748b; font-size: 0.9rem; margin-top: 0.2rem; }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb {
+            display: flex; align-items: center; gap: 0.5rem;
+            font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem;
+        }
+        .breadcrumb a { color: #3b82f6; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+
+        /* ── Cards ── */
+        .card {
+            background: #fff; border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            margin-bottom: 1.5rem; overflow: hidden;
+        }
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .card-header h2 { font-size: 1rem; color: #1e293b; }
+        .card-header i  { color: #3b82f6; }
+        .card-body { padding: 1.5rem; }
+
+        /* ── Form ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group label {
+            font-size: 0.85rem; font-weight: 600; color: #475569;
+        }
+        .form-group label .required { color: #ef4444; margin-left: 2px; }
+        .form-group input,
+        .form-group select {
+            padding: 0.65rem 0.9rem; border: 1px solid #cbd5e1;
+            border-radius: 8px; font-size: 0.95rem; color: #1e293b;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #fff;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none; border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .form-group input.error { border-color: #ef4444; }
+        .form-group .field-hint {
+            font-size: 0.78rem; color: #94a3b8;
+        }
+        .form-group .field-error {
+            font-size: 0.78rem; color: #ef4444; display: none;
+        }
+
+        /* Senha com toggle */
+        .input-password-wrap { position: relative; }
+        .input-password-wrap input { padding-right: 2.5rem; width: 100%; }
+        .btn-toggle-pass {
+            position: absolute; right: 0.75rem; top: 50%;
+            transform: translateY(-50%); background: none;
+            border: none; color: #94a3b8; cursor: pointer;
+            font-size: 0.95rem; padding: 0;
+        }
+        .btn-toggle-pass:hover { color: #475569; }
+
+        /* ── Alertas ── */
+        .alert {
+            padding: 1rem 1.25rem; border-radius: 8px;
+            margin-bottom: 1.25rem; display: flex;
+            align-items: flex-start; gap: 0.75rem;
+            font-size: 0.9rem; line-height: 1.5;
+        }
+        .alert i { margin-top: 2px; flex-shrink: 0; }
+        .alert-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #86efac; }
+        .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+        .alert-danger  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-hidden  { display: none; }
+
+        /* ── Botões ── */
+        .btn-row {
+            display: flex; gap: 1rem; flex-wrap: wrap;
+            margin-top: 1.5rem; align-items: center;
+        }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.7rem 1.5rem; border-radius: 8px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            border: none; transition: all 0.2s; text-decoration: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #fff;
+        }
+        .btn-primary:hover { background: linear-gradient(135deg, #2563eb, #1e40af); transform: translateY(-1px); }
+        .btn-secondary {
+            background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+        }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+        }
+        .btn-success:hover { background: linear-gradient(135deg, #059669, #047857); transform: translateY(-1px); }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+        /* ── Status Badge ── */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.3rem 0.75rem; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .status-badge.configured {
+            background: #dcfce7; color: #166534;
+        }
+        .status-badge.not-configured {
+            background: #fee2e2; color: #991b1b;
+        }
+        .status-badge .dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ── Info Box ── */
+        .info-box {
+            background: #f0f9ff; border-left: 4px solid #0284c7;
+            padding: 1rem 1.25rem; border-radius: 8px;
+            margin-bottom: 1.25rem;
+        }
+        .info-box h4 { color: #0c4a6e; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .info-box p, .info-box li {
+            color: #0369a1; font-size: 0.85rem; line-height: 1.6;
+        }
+        .info-box ul { padding-left: 1.25rem; }
+
+        /* ── Key Box ── */
+        .key-box {
+            background: #1e293b; color: #e2e8f0;
+            padding: 1rem 1.25rem; border-radius: 8px;
+            font-family: monospace; font-size: 0.9rem;
+            word-break: break-all; position: relative;
+            margin-top: 0.75rem;
+        }
+        .key-box .btn-copy {
+            position: absolute; top: 0.5rem; right: 0.5rem;
+            background: #334155; color: #94a3b8; border: none;
+            padding: 0.3rem 0.6rem; border-radius: 6px;
+            cursor: pointer; font-size: 0.75rem; transition: 0.2s;
+        }
+        .key-box .btn-copy:hover { background: #475569; color: #fff; }
+
+        /* ── Teste Modal ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #fff; border-radius: 16px;
+            padding: 2rem; width: 100%; max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.25s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .modal h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1e293b; }
+        .modal .modal-footer {
+            display: flex; gap: 0.75rem; margin-top: 1.25rem;
+            justify-content: flex-end;
+        }
+
+        /* ── Spinner ── */
+        .spinner {
+            display: inline-block; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Mobile ── */
+        .menu-toggle {
+            display: none; position: fixed; top: 1rem; left: 1rem;
+            z-index: 1001; background: #1e293b; color: #fff;
+            border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .menu-toggle { display: block; }
+            .main-content { margin-left: 0; padding: 1rem; padding-top: 4rem; }
+            .form-grid { grid-template-columns: 1fr; }
+            .btn-row { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Menu Toggle Mobile -->
+<button class="menu-toggle" onclick="toggleMenu()" aria-label="Menu">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+    <h1><i class="fas fa-stethoscope" style="margin-right:0.5rem;color:#3b82f6;"></i>ERP InLaudo</h1>
+    <p class="brand-sub">Telemedicina Radiológica</p>
+    <ul class="nav-menu">
+        <li class="nav-item"><a href="../../frontend/dashboard.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+        <li class="nav-item"><a href="../../frontend/moradores.html" class="nav-link"><i class="fas fa-users"></i> Usuários</a></li>
+        <li class="nav-item"><a href="../../frontend/relatorios.html" class="nav-link"><i class="fas fa-file-alt"></i> Relatórios</a></li>
+        <li class="nav-item"><a href="../../frontend/configuracao.html" class="nav-link"><i class="fas fa-cog"></i> Configurações</a></li>
+        <li class="nav-item" style="margin-top:2rem;border-top:1px solid rgba(255,255,255,0.1);padding-top:1rem;">
+            <a href="#" class="nav-link" id="btn-logout"
+               style="background:rgba(239,68,68,0.1);color:#fca5a5;"
+               onclick="fazerLogout(event)">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<!-- Conteúdo Principal -->
+<main class="main-content">
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+        <a href="../../frontend/dashboard.html"><i class="fas fa-home"></i></a>
+        <i class="fas fa-chevron-right" style="font-size:0.7rem;"></i>
+        <a href="../../frontend/configuracao.html">Configurações</a>
+        <i class="fas fa-chevron-right" style="font-size:0.7rem;"></i>
+        <span>Integração de E-mail</span>
+    </nav>
+
+    <!-- Header da Página -->
+    <div class="page-header">
+        <div class="icon-wrap"><i class="fas fa-envelope"></i></div>
+        <div>
+            <h1>Integração de E-mail (SMTP)</h1>
+            <p>Configure o servidor de envio de e-mails do sistema ERP InLaudo</p>
+        </div>
+        <div style="margin-left:auto;" id="statusBadge"></div>
+    </div>
+
+    <!-- Alerta Global -->
+    <div id="alertGlobal" class="alert alert-hidden" role="alert"></div>
+
+    <!-- Card: Aviso sobre APP_ENCRYPTION_KEY -->
+    <div class="card" id="cardEncryptionWarning" style="display:none;">
+        <div class="card-header">
+            <i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i>
+            <h2>Criptografia não configurada</h2>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-lock-open"></i>
+                <div>
+                    <strong>A chave de criptografia não foi encontrada no servidor.</strong><br>
+                    Para salvar a senha do SMTP com segurança, adicione a linha abaixo ao arquivo <code>.env</code> na raiz do servidor e reinicie o serviço PHP.
+                </div>
+            </div>
+            <div id="generatedKeyBox"></div>
+            <div class="btn-row" style="margin-top:1rem;">
+                <button class="btn btn-secondary" onclick="gerarNovaChave()">
+                    <i class="fas fa-sync-alt"></i> Gerar nova chave
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card: Configuração SMTP -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-server"></i>
+            <h2>Configurações do Servidor SMTP</h2>
+        </div>
+        <div class="card-body">
+
+            <div class="info-box">
+                <h4><i class="fas fa-info-circle"></i> Como configurar o Gmail</h4>
+                <ul>
+                    <li>Use <strong>smtp.gmail.com</strong>, porta <strong>587</strong>, protocolo <strong>TLS</strong>.</li>
+                    <li>No campo <strong>Senha do App Google</strong>, insira a <em>Senha de App</em> de 16 caracteres gerada em <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:#0369a1;">myaccount.google.com/apppasswords</a> (sem espaços).</li>
+                    <li>A senha é armazenada <strong>criptografada</strong> no banco de dados com AES-256.</li>
+                </ul>
+            </div>
+
+            <form id="formEmail" novalidate>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="smtp_host">Servidor SMTP <span class="required">*</span></label>
+                        <input type="text" id="smtp_host" name="smtp_host"
+                               placeholder="smtp.gmail.com" autocomplete="off">
+                        <span class="field-error" id="err_smtp_host">Campo obrigatório.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_port">Porta <span class="required">*</span></label>
+                        <input type="number" id="smtp_port" name="smtp_port"
+                               placeholder="587" min="1" max="65535">
+                        <span class="field-hint">587 (TLS) · 465 (SSL) · 25 (sem criptografia)</span>
+                        <span class="field-error" id="err_smtp_port">Porta inválida (1–65535).</span>
+                    </div>
+                </div>
+
+                <div class="form-grid" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label for="smtp_seguranca">Protocolo de Segurança <span class="required">*</span></label>
+                        <select id="smtp_seguranca" name="smtp_seguranca">
+                            <option value="tls">TLS (STARTTLS) — recomendado</option>
+                            <option value="ssl">SSL</option>
+                            <option value="none">Nenhum</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_usuario">Usuário / E-mail de envio <span class="required">*</span></label>
+                        <input type="email" id="smtp_usuario" name="smtp_usuario"
+                               placeholder="diretoria@inlaudo.com.br" autocomplete="off">
+                        <span class="field-error" id="err_smtp_usuario">E-mail inválido.</span>
+                    </div>
+                </div>
+
+                <div class="form-grid" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label for="smtp_senha">
+                            Senha do App Google <span class="required">*</span>
+                            <span id="senhaExisteTag" style="display:none;font-weight:400;color:#10b981;margin-left:6px;">
+                                <i class="fas fa-check-circle"></i> já configurada
+                            </span>
+                        </label>
+                        <div class="input-password-wrap">
+                            <input type="password" id="smtp_senha" name="smtp_senha"
+                                   placeholder="Deixe em branco para manter a atual"
+                                   autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pass"
+                                    onclick="toggleSenha()" title="Mostrar/ocultar senha">
+                                <i class="fas fa-eye" id="iconSenha"></i>
+                            </button>
+                        </div>
+                        <span class="field-hint">Senha de App de 16 caracteres gerada no Google (sem espaços).</span>
+                        <span class="field-error" id="err_smtp_senha">Informe a senha do App Google.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_de_email">E-mail Remetente <span class="required">*</span></label>
+                        <input type="email" id="smtp_de_email" name="smtp_de_email"
+                               placeholder="diretoria@inlaudo.com.br">
+                        <span class="field-hint">Endereço que aparecerá como remetente nos e-mails.</span>
+                        <span class="field-error" id="err_smtp_de_email">E-mail inválido.</span>
+                    </div>
+                </div>
+
+                <div class="form-grid" style="margin-top:1.25rem;">
+                    <div class="form-group">
+                        <label for="smtp_de_nome">Nome do Remetente <span class="required">*</span></label>
+                        <input type="text" id="smtp_de_nome" name="smtp_de_nome"
+                               placeholder="ERP InLaudo">
+                        <span class="field-error" id="err_smtp_de_nome">Campo obrigatório.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="smtp_ativo">Status</label>
+                        <select id="smtp_ativo" name="smtp_ativo">
+                            <option value="1">✅ Ativo</option>
+                            <option value="0">⛔ Inativo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary" id="btnSalvar">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                    <button type="button" class="btn btn-success" id="btnTestar"
+                            onclick="abrirModalTeste()">
+                        <i class="fas fa-paper-plane"></i> Enviar E-mail de Teste
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="carregarConfig()">
+                        <i class="fas fa-undo"></i> Recarregar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Card: Sobre a Chave de Criptografia -->
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-key"></i>
+            <h2>Chave de Criptografia (APP_ENCRYPTION_KEY)</h2>
+        </div>
+        <div class="card-body">
+            <div class="info-box">
+                <h4><i class="fas fa-shield-alt"></i> O que é e por que é necessária?</h4>
+                <p>A <strong>APP_ENCRYPTION_KEY</strong> é uma chave secreta usada para criptografar a senha do servidor SMTP antes de armazená-la no banco de dados. Isso garante que, mesmo que o banco seja comprometido, a senha não seja exposta em texto puro.</p>
+                <ul style="margin-top:0.5rem;">
+                    <li>Deve ser adicionada ao arquivo <code>.env</code> na raiz do servidor.</li>
+                    <li>Nunca compartilhe ou exponha esta chave.</li>
+                    <li>Se a chave for alterada, será necessário recadastrar a senha SMTP.</li>
+                </ul>
+            </div>
+            <button class="btn btn-secondary" onclick="gerarNovaChave()">
+                <i class="fas fa-key"></i> Gerar nova APP_ENCRYPTION_KEY
+            </button>
+            <div id="keyBoxContainer" style="margin-top:1rem;"></div>
+        </div>
+    </div>
+
+</main>
+
+<!-- Modal: Teste de E-mail -->
+<div class="modal-overlay" id="modalTeste">
+    <div class="modal">
+        <h3><i class="fas fa-paper-plane" style="color:#3b82f6;margin-right:0.5rem;"></i>Enviar E-mail de Teste</h3>
+        <p style="color:#64748b;font-size:0.9rem;margin-bottom:1rem;">
+            Informe o endereço de e-mail que receberá a mensagem de teste para validar as configurações SMTP.
+        </p>
+        <div class="form-group">
+            <label for="emailTeste">E-mail de destino <span class="required">*</span></label>
+            <input type="email" id="emailTeste" placeholder="seu@email.com.br">
+            <span class="field-error" id="err_emailTeste" style="display:none;">Informe um e-mail válido.</span>
+        </div>
+        <div id="alertTeste" class="alert alert-hidden" style="margin-top:1rem;"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="fecharModalTeste()">Cancelar</button>
+            <button class="btn btn-success" id="btnEnviarTeste" onclick="enviarTeste()">
+                <i class="fas fa-paper-plane"></i> Enviar Teste
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// =====================================================
+// CONFIGURAÇÃO DA API
+// =====================================================
+const API_URL = '../../api/api_integracao_email.php';
+
+// =====================================================
+// INICIALIZAÇÃO
+// =====================================================
+document.addEventListener('DOMContentLoaded', () => {
+    carregarConfig();
+    document.getElementById('formEmail').addEventListener('submit', salvarConfig);
+});
+
+// =====================================================
+// CARREGAR CONFIGURAÇÃO EXISTENTE
+// =====================================================
+async function carregarConfig() {
+    try {
+        const res  = await fetch(`${API_URL}?acao=buscar`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.sucesso && data.dados) {
+            const d = data.dados;
+            document.getElementById('smtp_host').value      = d.smtp_host      || '';
+            document.getElementById('smtp_port').value      = d.smtp_port      || 587;
+            document.getElementById('smtp_usuario').value   = d.smtp_usuario   || '';
+            document.getElementById('smtp_de_email').value  = d.smtp_de_email  || '';
+            document.getElementById('smtp_de_nome').value   = d.smtp_de_nome   || '';
+            document.getElementById('smtp_seguranca').value = d.smtp_seguranca || 'tls';
+            document.getElementById('smtp_ativo').value     = d.smtp_ativo     ?? 1;
+
+            // Indicar se há senha salva
+            if (d.tem_senha) {
+                document.getElementById('senhaExisteTag').style.display = 'inline';
+                document.getElementById('smtp_senha').placeholder = 'Deixe em branco para manter a atual';
+            }
+
+            atualizarStatusBadge(true);
+        } else {
+            atualizarStatusBadge(false);
+        }
+    } catch (e) {
+        console.error('Erro ao carregar configuração:', e);
+        mostrarAlerta('alertGlobal', 'danger', 'Erro ao comunicar com o servidor. Verifique sua conexão.');
+    }
+}
+
+// =====================================================
+// SALVAR CONFIGURAÇÃO
+// =====================================================
+async function salvarConfig(e) {
+    e.preventDefault();
+    if (!validarFormulario()) return;
+
+    const btn = document.getElementById('btnSalvar');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Salvando...';
+
+    const form    = document.getElementById('formEmail');
+    const payload = new FormData(form);
+    payload.append('acao', 'salvar');
+
+    try {
+        const res  = await fetch(API_URL, { method: 'POST', body: payload, credentials: 'include' });
+        const data = await res.json();
+
+        if (data.sucesso) {
+            mostrarAlerta('alertGlobal', 'success',
+                '<i class="fas fa-check-circle"></i> ' + data.mensagem);
+            document.getElementById('senhaExisteTag').style.display = 'inline';
+            document.getElementById('smtp_senha').value = '';
+            document.getElementById('smtp_senha').placeholder = 'Deixe em branco para manter a atual';
+            atualizarStatusBadge(true);
+        } else {
+            // Verificar se é erro de criptografia
+            if (data.mensagem && data.mensagem.includes('APP_ENCRYPTION_KEY')) {
+                document.getElementById('cardEncryptionWarning').style.display = 'block';
+                gerarNovaChave();
+            }
+            mostrarAlerta('alertGlobal', 'danger',
+                '<i class="fas fa-times-circle"></i> ' + data.mensagem);
+        }
+    } catch (err) {
+        mostrarAlerta('alertGlobal', 'danger',
+            '<i class="fas fa-times-circle"></i> Erro de comunicação com o servidor.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Salvar Configurações';
+    }
+}
+
+// =====================================================
+// VALIDAÇÃO DO FORMULÁRIO
+// =====================================================
+function validarFormulario() {
+    let valido = true;
+
+    const campos = [
+        { id: 'smtp_host',     errId: 'err_smtp_host',     tipo: 'texto' },
+        { id: 'smtp_port',     errId: 'err_smtp_port',     tipo: 'porta' },
+        { id: 'smtp_usuario',  errId: 'err_smtp_usuario',  tipo: 'email' },
+        { id: 'smtp_de_email', errId: 'err_smtp_de_email', tipo: 'email' },
+        { id: 'smtp_de_nome',  errId: 'err_smtp_de_nome',  tipo: 'texto' },
+    ];
+
+    campos.forEach(c => {
+        const input = document.getElementById(c.id);
+        const err   = document.getElementById(c.errId);
+        let ok = true;
+
+        if (c.tipo === 'texto') {
+            ok = input.value.trim() !== '';
+        } else if (c.tipo === 'email') {
+            ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim());
+        } else if (c.tipo === 'porta') {
+            const v = parseInt(input.value);
+            ok = !isNaN(v) && v >= 1 && v <= 65535;
+        }
+
+        if (!ok) {
+            input.classList.add('error');
+            err.style.display = 'block';
+            valido = false;
+        } else {
+            input.classList.remove('error');
+            err.style.display = 'none';
+        }
+    });
+
+    // Senha: obrigatória apenas se não há senha salva
+    const senhaInput = document.getElementById('smtp_senha');
+    const senhaTag   = document.getElementById('senhaExisteTag');
+    const errSenha   = document.getElementById('err_smtp_senha');
+    const temSenha   = senhaTag.style.display !== 'none';
+
+    if (!temSenha && senhaInput.value.trim() === '') {
+        senhaInput.classList.add('error');
+        errSenha.style.display = 'block';
+        valido = false;
+    } else {
+        senhaInput.classList.remove('error');
+        errSenha.style.display = 'none';
+    }
+
+    return valido;
+}
+
+// =====================================================
+// MODAL DE TESTE
+// =====================================================
+function abrirModalTeste() {
+    document.getElementById('modalTeste').classList.add('open');
+    document.getElementById('emailTeste').focus();
+    document.getElementById('alertTeste').className = 'alert alert-hidden';
+}
+
+function fecharModalTeste() {
+    document.getElementById('modalTeste').classList.remove('open');
+    document.getElementById('emailTeste').value = '';
+    document.getElementById('err_emailTeste').style.display = 'none';
+}
+
+async function enviarTeste() {
+    const emailInput = document.getElementById('emailTeste');
+    const errEmail   = document.getElementById('err_emailTeste');
+    const email      = emailInput.value.trim();
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEmail.style.display = 'block';
+        emailInput.classList.add('error');
+        return;
+    }
+    errEmail.style.display = 'none';
+    emailInput.classList.remove('error');
+
+    const btn = document.getElementById('btnEnviarTeste');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+    try {
+        const res  = await fetch(`${API_URL}?acao=testar&email=${encodeURIComponent(email)}`,
+                                 { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.sucesso) {
+            mostrarAlerta('alertTeste', 'success',
+                '<i class="fas fa-check-circle"></i> ' + data.mensagem);
+        } else {
+            mostrarAlerta('alertTeste', 'danger',
+                '<i class="fas fa-times-circle"></i> ' + data.mensagem);
+        }
+    } catch (err) {
+        mostrarAlerta('alertTeste', 'danger',
+            '<i class="fas fa-times-circle"></i> Erro de comunicação com o servidor.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Teste';
+    }
+}
+
+// =====================================================
+// GERAR CHAVE DE CRIPTOGRAFIA
+// =====================================================
+async function gerarNovaChave() {
+    try {
+        const res  = await fetch(`${API_URL}?acao=gerar_key`, { credentials: 'include' });
+        const data = await res.json();
+
+        if (data.sucesso && data.dados) {
+            const envLine = data.dados.env_line;
+            const html = `
+                <div class="key-box" id="keyBoxContent">
+                    <button class="btn-copy" onclick="copiarChave()">
+                        <i class="fas fa-copy"></i> Copiar
+                    </button>
+                    <div id="keyText">${envLine}</div>
+                </div>
+                <p style="margin-top:0.75rem;font-size:0.82rem;color:#ef4444;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>ATENÇÃO:</strong> Copie esta linha e adicione ao arquivo <code>.env</code> na raiz do servidor. 
+                    Após adicionar, reinicie o servidor PHP. Se a chave for perdida, será necessário recadastrar a senha SMTP.
+                </p>`;
+
+            // Atualizar ambos os containers
+            const c1 = document.getElementById('generatedKeyBox');
+            const c2 = document.getElementById('keyBoxContainer');
+            if (c1) c1.innerHTML = html;
+            if (c2) c2.innerHTML = html;
+        }
+    } catch (e) {
+        console.error('Erro ao gerar chave:', e);
+    }
+}
+
+function copiarChave() {
+    const texto = document.getElementById('keyText')?.innerText;
+    if (!texto) return;
+    navigator.clipboard.writeText(texto).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+            setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2000);
+        }
+    });
+}
+
+// =====================================================
+// UTILITÁRIOS
+// =====================================================
+function mostrarAlerta(containerId, tipo, html) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.className = `alert alert-${tipo}`;
+    el.innerHTML = html;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (tipo === 'success') {
+        setTimeout(() => { el.className = 'alert alert-hidden'; }, 6000);
+    }
+}
+
+function atualizarStatusBadge(configurado) {
+    const el = document.getElementById('statusBadge');
+    if (!el) return;
+    if (configurado) {
+        el.innerHTML = `<span class="status-badge configured">
+            <span class="dot"></span> Configurado
+        </span>`;
+    } else {
+        el.innerHTML = `<span class="status-badge not-configured">
+            <span class="dot"></span> Não configurado
+        </span>`;
+    }
+}
+
+function toggleSenha() {
+    const input = document.getElementById('smtp_senha');
+    const icon  = document.getElementById('iconSenha');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
+function toggleMenu() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+
+// Fechar sidebar ao clicar fora (mobile)
+document.addEventListener('click', (e) => {
+    const sidebar = document.getElementById('sidebar');
+    const toggle  = document.querySelector('.menu-toggle');
+    if (window.innerWidth <= 768 &&
+        sidebar && !sidebar.contains(e.target) &&
+        toggle  && !toggle.contains(e.target)) {
+        sidebar.classList.remove('active');
+    }
+});
+
+// Fechar modal ao clicar fora
+document.getElementById('modalTeste').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modalTeste')) fecharModalTeste();
+});
+
+// Logout
+function fazerLogout(event) {
+    event.preventDefault();
+    if (!confirm('Deseja realmente sair do sistema?')) return;
+    fetch('../../api/logout.php', { method: 'POST', credentials: 'include' })
+        .then(r => r.json())
+        .then(d => {
+            sessionStorage.clear();
+            window.location.href = '../../login.html';
+        })
+        .catch(() => {
+            sessionStorage.clear();
+            window.location.href = '../../login.html';
+        });
+}
+</script>
+</body>
+</html>
